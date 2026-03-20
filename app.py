@@ -10,9 +10,14 @@ import joblib
 import numpy as np
 import os
 import json
+import anthropic
+from threat_feed import (check_threat_db, get_feed_stats,
+                          start_feed_scheduler, init_threat_db)
 
 from database import init_db, save_scan, get_history, get_stats, clear_history
 init_db()
+init_threat_db()
+start_feed_scheduler()
 
 app = Flask(__name__)
 CORS(app)
@@ -198,6 +203,23 @@ def heuristic_score(url):
 # ─── COMBINED SCORING (ML + Heuristics) ───────────────────────
 def combined_score(url):
     heuristic, flags = heuristic_score(url)
+
+    # Check threat intelligence database
+    is_known_threat, threat_source, threat_type = check_threat_db(url)
+    if is_known_threat:
+        source_names = {
+            'openphish': 'OpenPhish',
+            'urlhaus': 'URLhaus',
+            'phishtank': 'PhishTank'
+        }
+        type_names = {
+            'phishing': 'phishing site',
+            'malware': 'malware distribution'
+        }
+        src = source_names.get(threat_source, threat_source)
+        typ = type_names.get(threat_type, threat_type)
+        flags.insert(0, f"🚨 Known {typ} — listed in {src} threat database")
+        heuristic = min(heuristic + 60, 100)
     ml_score = None
     ml_confidence = None
     detection_method = "heuristic"
@@ -394,6 +416,67 @@ def api_stats():
 def api_clear():
     clear_history()
     return jsonify({'success': True})
+
+@app.route('/api/feed-stats', methods=['GET'])
+def feed_stats():
+    return jsonify(get_feed_stats())
+
+@app.route('/chat')
+def chat_page():
+    return render_template('chatbot.html')
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    try:
+        req_data = request.get_json()
+        user_message = req_data.get('message', '').strip()
+        history = req_data.get('history', [])
+
+        if not user_message:
+            return jsonify({'error': 'No message'}), 400
+
+        client = anthropic.Anthropic(
+            api_key=os.environ.get('ANTHROPIC_API_KEY', '')
+        )
+
+        system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant built into SafeLinks — a URL phishing detection tool.
+
+Your expertise: phishing attacks, URL analysis, safe browsing, malware, social engineering, password security, data breaches, cybersecurity best practices.
+
+Guidelines:
+- Be friendly, clear and educational
+- Use simple language suitable for all ages
+- Use emojis to make responses engaging  
+- Keep responses concise (3-4 paragraphs max)
+- Always relate answers back to URL and online safety
+- If someone asks about a specific URL, guide them to use SafeLinks scanner
+- Never help create phishing attacks
+- End with a practical actionable tip"""
+
+        messages = []
+        for h in history[-8:]:
+            if h.get('role') in ['user', 'assistant']:
+                messages.append({
+                    'role': h['role'],
+                    'content': h['content']
+                })
+
+        if not messages or messages[-1]['role'] != 'user':
+            messages.append({'role': 'user', 'content': user_message})
+
+        response = client.messages.create(
+            model='claude-opus-4-5',
+            max_tokens=600,
+            system=system_prompt,
+            messages=messages
+        )
+
+        reply = response.content[0].text
+        return jsonify({'reply': reply})
+
+    except Exception as e:
+        print(f"Chat error: {e}")
+        return jsonify({'reply': 'I am having trouble connecting right now. Please try again in a moment! 🙏'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

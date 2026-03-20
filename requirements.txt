@@ -8,3 +8,4 @@ joblib
 pandas
 numpy
 gunicorn
+anthropic
