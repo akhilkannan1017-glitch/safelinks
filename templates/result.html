@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeLinks – Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#050505;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow-x:hidden}
+    .bg-wrap{position:fixed;inset:0;z-index:0}
+    .bg-image{position:absolute;inset:-40px;background-image:url('/static/batman.jpg');background-size:cover;background-position:center;filter:blur(28px) brightness(0.18) saturate(0.9);transform:scale(1.1)}
+    .bg-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 90% 90% at 50% 50%,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.8) 100%)}
+    .page{position:relative;z-index:2;width:100%;max-width:560px;margin:30px 20px}
+    .back-btn{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,0.35);font-size:0.78rem;text-decoration:none;margin-bottom:16px;transition:color 0.2s}
+    .back-btn:hover{color:#00e5a0}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+<div class="bg-wrap"><div class="bg-image"></div><div class="bg-overlay"></div></div>
+<div class="page">
+  <a class="back-btn" href="/">← Back to SafeLinks</a>
+  <div id="RC"><p style="color:rgba(255,255,255,0.4);text-align:center;padding:40px">Loading...</p></div>
+</div>
+<script>
+// ── GET DATA ──────────────────────────────────────────────────
+var raw = sessionStorage.getItem('sl_result');
+var lang = sessionStorage.getItem('sl_lang') || 'en';
+
+if (!raw) {
+  document.getElementById('RC').innerHTML =
+    '<div style="text-align:center;padding:40px;">' +
+    '<p style="color:rgba(255,255,255,0.4);margin-bottom:20px;">No scan data. Please scan a URL first.</p>' +
+    '<button onclick="window.location.href=\'/\'" style="padding:12px 24px;background:linear-gradient(135deg,#00e0a0,#00b8d9);color:#000;border:none;border-radius:12px;font-size:0.9rem;font-weight:600;cursor:pointer;">← Go Scan a URL</button>' +
+    '</div>';
+} else {
+
+var data = JSON.parse(raw);
+var score = data.score || 0;
+var domain = data.domain || '';
+var flags = data.flags || [];
+var isSafe = (data.verdict === 'SAFE');
+var isQuick = (data.scan_mode === 'quick');
+
+// ════════════════════════════════════════════════════════════════
+// QUICK SCAN — Simple Clean Interface
+// ════════════════════════════════════════════════════════════════
+if (isQuick) {
+
+var qColor = isSafe ? '#00e5a0' : '#ffaa00';
+var qIcon = isSafe ? '✅' : '⚠️';
+var qGrad = isSafe ? '#00b87a,#00e5a0' : '#e67e00,#ffaa00';
+var qBord = isSafe ? '#00e5a0' : '#ffaa00';
+var qBgIcon = isSafe ? 'rgba(0,229,160,0.1)' : 'rgba(255,170,0,0.1)';
+var qBorderIcon = isSafe ? 'rgba(0,229,160,0.3)' : 'rgba(255,170,0,0.3)';
+
+var qL = {
+  en:{ts:'SAFE',tw:'SUSPICIOUS',ms:'Quick analysis found no major threats. This URL appears safe based on heuristic checks. No phishing keywords, suspicious TLD, brand impersonation, or URL shorteners detected. For a complete report including domain age verification, run a Full Scan.',mw:'Quick analysis detected suspicious characteristics. This URL may be unsafe. Run a Full Scan for a complete detailed report with domain age verification.',note:'⚡ Quick Scan completed — domain age not checked. Use Full Scan for a complete analysis.',sc:'THREAT SCORE',ri:'RISK',ht:'HTTPS',fl:'FLAGS',op:'Open URL Safely',ba:'← Scan Another URL',lo:'Low',me:'Medium',hi:'High'},
+  ml:{ts:'സുരക്ഷിതം',tw:'സംശയാസ്പദം',ms:'ദ്രുത വിശകലനത്തിൽ പ്രധാന ഭീഷണികൾ കണ്ടെത്തിയില്ല. ഫിഷിംഗ് കീവേഡുകൾ, സംശയാസ്പദ TLD, ബ്രാൻഡ് ആൾമാറാട്ടം, URL ഷോർട്ടനർ — ഒന്നും കണ്ടെത്തിയില്ല. ഡൊമെയ്ൻ പ്രായം ഉൾപ്പെടെ സമ്പൂർണ്ണ റിപ്പോർട്ടിനായി പൂർണ്ണ സ്കാൻ ഉപയോഗിക്കുക.',mw:'ദ്രുത വിശകലനത്തിൽ സംശയാസ്പദ സ്വഭാവങ്ങൾ കണ്ടെത്തി. ഈ URL സുരക്ഷിതമല്ലായിരിക്കാം. കൂടുതൽ വിശദാംശങ്ങൾക്ക് പൂർണ്ണ സ്കാൻ നടത്തുക.',note:'⚡ ദ്രുത സ്കാൻ പൂർത്തിയായി — ഡൊമെയ്ൻ പ്രായം പരിശോധിച്ചില്ല. സമ്പൂർണ്ണ വിശകലനത്തിന് പൂർണ്ണ സ്കാൻ ഉപയോഗിക്കുക.',sc:'ഭീഷണി സ്കോർ',ri:'അപകടം',ht:'HTTPS',fl:'കണ്ടെത്തലുകൾ',op:'URL തുറക്കുക',ba:'← മറ്റൊരു URL',lo:'കുറഞ്ഞത്',me:'മധ്യം',hi:'ഉയർന്നത്'},
+  hi:{ts:'सुरक्षित',tw:'संदिग्ध',ms:'त्वरित विश्लेषण में कोई बड़ा खतरा नहीं मिला। कोई फ़िशिंग कीवर्ड, संदिग्ध TLD, ब्रांड अनुकरण या URL शॉर्टनर नहीं। डोमेन आयु सहित पूर्ण रिपोर्ट के लिए पूर्ण स्कैन चलाएं।',mw:'त्वरित विश्लेषण में संदिग्ध विशेषताएं मिलीं। यह URL असुरक्षित हो सकता है। पूर्ण रिपोर्ट के लिए पूर्ण स्कैन चलाएं।',note:'⚡ त्वरित स्कैन — डोमेन आयु की जांच नहीं की गई।',sc:'खतरा स्कोर',ri:'जोखिम',ht:'HTTPS',fl:'संकेतक',op:'URL खोलें',ba:'← दूसरा URL',lo:'कम',me:'मध्यम',hi:'उच्च'},
+  ta:{ts:'பாதுகாப்பானது',tw:'சந்தேகமானது',ms:'விரைவு பகுப்பாய்வில் முக்கிய அச்சுறுத்தல்கள் இல்லை. முழு அறிக்கைக்கு முழு ஸ்கேன் இயக்கவும்.',mw:'விரைவு பகுப்பாய்வில் சந்தேகமான பண்புகள் உள்ளன. முழு ஸ்கேன் இயக்கவும்.',note:'⚡ விரைவு ஸ்கேன் — டொமைன் வயது சரிபார்க்கப்படவில்லை.',sc:'அச்சுறுத்தல் மதிப்பெண்',ri:'அபாயம்',ht:'HTTPS',fl:'குறிகாட்டிகள்',op:'URL திற',ba:'← வேறொரு URL',lo:'குறைவு',me:'நடுத்தரம்',hi:'அதிகம்'},
+  te:{ts:'సురక్షితం',tw:'సందేహాస్పదం',ms:'శీఘ్ర విశ్లేషణలో ప్రధాన బెదిరింపులు లేవు. పూర్తి నివేదికకు పూర్తి స్కాన్ చేయండి.',mw:'శీఘ్ర విశ్లేషణలో అనుమానాస్పద లక్షణాలు ఉన్నాయి. పూర్తి స్కాన్ చేయండి.',note:'⚡ శీఘ్ర స్కాన్ — డొమైన్ వయసు తనిఖీ చేయబడలేదు.',sc:'బెదిరింపు స్కోర్',ri:'ప్రమాదం',ht:'HTTPS',fl:'సూచికలు',op:'URL తెరవండి',ba:'← మరొక URL',lo:'తక్కువ',me:'మధ్యస్థం',hi:'అధికం'},
+  kn:{ts:'ಸುರಕ್ಷಿತ',tw:'ಸಂಶಯಾಸ್ಪದ',ms:'ತ್ವರಿತ ವಿಶ್ಲೇಷಣೆಯಲ್ಲಿ ಯಾವುದೇ ಬೆದರಿಕೆಗಳಿಲ್ಲ. ಪೂರ್ಣ ಸ್ಕ್ಯಾನ್ ಚಲಾಯಿಸಿ.',mw:'ತ್ವರಿತ ವಿಶ್ಲೇಷಣೆಯಲ್ಲಿ ಸಂಶಯಾಸ್ಪದ ಗುಣಲಕ್ಷಣಗಳು ಕಂಡುಬಂದಿವೆ.',note:'⚡ ತ್ವರಿತ ಸ್ಕ್ಯಾನ್ — ಡೊಮೈನ್ ವಯಸ್ಸು ಪರಿಶೀಲಿಸಲಾಗಿಲ್ಲ.',sc:'ಬೆದರಿಕೆ ಸ್ಕೋರ್',ri:'ಅಪಾಯ',ht:'HTTPS',fl:'ಸೂಚಕಗಳು',op:'URL ತೆರೆಯಿರಿ',ba:'← ಮತ್ತೊಂದು URL',lo:'ಕಡಿಮೆ',me:'ಮಧ್ಯಮ',hi:'ಹೆಚ್ಚು'},
+  fr:{ts:'SÉCURISÉ',tw:'SUSPECT',ms:'Analyse rapide: aucune menace détectée. Pour un rapport complet, lancez un scan complet.',mw:'Analyse rapide: caractéristiques suspectes détectées. Lancez un scan complet.',note:'⚡ Scan rapide — âge du domaine non vérifié.',sc:'Score de menace',ri:'Risque',ht:'HTTPS',fl:'Indicateurs',op:'Ouvrir URL',ba:'← Autre URL',lo:'Faible',me:'Moyen',hi:'Élevé'},
+  de:{ts:'SICHER',tw:'VERDÄCHTIG',ms:'Schnellanalyse: Keine Bedrohungen erkannt. Für einen vollständigen Bericht führen Sie einen vollständigen Scan durch.',mw:'Schnellanalyse: Verdächtige Merkmale erkannt.',note:'⚡ Schnell-Scan — Domain-Alter nicht geprüft.',sc:'Bedrohungsscore',ri:'Risiko',ht:'HTTPS',fl:'Indikatoren',op:'URL öffnen',ba:'← Andere URL',lo:'Niedrig',me:'Mittel',hi:'Hoch'},
+  es:{ts:'SEGURO',tw:'SOSPECHOSO',ms:'Análisis rápido: no se detectaron amenazas. Para un informe completo, ejecute un escaneo completo.',mw:'Análisis rápido: características sospechosas detectadas.',note:'⚡ Escaneo rápido — edad del dominio no verificada.',sc:'Puntuación',ri:'Riesgo',ht:'HTTPS',fl:'Indicadores',op:'Abrir URL',ba:'← Otra URL',lo:'Bajo',me:'Medio',hi:'Alto'},
+  ar:{ts:'آمن',tw:'مشبوه',ms:'التحليل السريع: لم يتم اكتشاف تهديدات. للحصول على تقرير كامل، قم بإجراء فحص كامل.',mw:'التحليل السريع: تم اكتشاف خصائص مشبوهة.',note:'⚡ فحص سريع — لم يتم التحقق من عمر النطاق.',sc:'درجة التهديد',ri:'الخطر',ht:'HTTPS',fl:'المؤشرات',op:'فتح الرابط',ba:'← رابط آخر',lo:'منخفض',me:'متوسط',hi:'عالٍ'},
+  zh:{ts:'安全',tw:'可疑',ms:'快速分析：未检测到威胁。如需完整报告，请运行完整扫描。',mw:'快速分析：检测到可疑特征。',note:'⚡ 快速扫描——未验证域名年龄。',sc:'威胁评分',ri:'风险',ht:'HTTPS',fl:'指标',op:'打开网址',ba:'← 其他网址',lo:'低',me:'中',hi:'高'},
+  ja:{ts:'安全',tw:'不審',ms:'クイック分析：脅威は検出されませんでした。完全なレポートにはフルスキャンを実行してください。',mw:'クイック分析：疑わしい特性が検出されました。',note:'⚡ クイックスキャン — ドメイン年齢は未確認。',sc:'脅威スコア',ri:'リスク',ht:'HTTPS',fl:'指標',op:'URLを開く',ba:'← 別のURL',lo:'低',me:'中',hi:'高'},
+  ru:{ts:'БЕЗОПАСНО',tw:'ПОДОЗРИТЕЛЬНО',ms:'Быстрый анализ: угроз не обнаружено. Для полного отчёта запустите полное сканирование.',mw:'Быстрый анализ: обнаружены подозрительные характеристики.',note:'⚡ Быстрое сканирование — возраст домена не проверен.',sc:'Оценка угрозы',ri:'Риск',ht:'HTTPS',fl:'Индикаторы',op:'Открыть URL',ba:'← Другой URL',lo:'Низкий',me:'Средний',hi:'Высокий'},
+  pt:{ts:'SEGURO',tw:'SUSPEITO',ms:'Análise rápida: nenhuma ameaça detectada. Para um relatório completo, execute uma verificação completa.',mw:'Análise rápida: características suspeitas detectadas.',note:'⚡ Verificação rápida — idade do domínio não verificada.',sc:'Pontuação',ri:'Risco',ht:'HTTPS',fl:'Indicadores',op:'Abrir URL',ba:'← Outro URL',lo:'Baixo',me:'Médio',hi:'Alto'}
+};
+
+var q = qL[lang] || qL['en'];
+var qRisk = score < 30 ? q.lo : score < 60 ? q.me : q.hi;
+var qRiskCol = score < 30 ? '#00e5a0' : score < 60 ? '#ffaa00' : '#ff4444';
+var qTitle = isSafe ? q.ts : q.tw;
+var qMsg = isSafe ? q.ms : q.mw;
+
+document.getElementById('RC').innerHTML =
+  '<div style="background:rgba(12,12,12,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:28px;padding:28px 24px;backdrop-filter:blur(80px);-webkit-backdrop-filter:blur(80px);box-shadow:0 50px 100px rgba(0,0,0,0.9);position:relative;overflow:hidden;animation:fadeUp 0.5s ease;">' +
+  '<div style="position:absolute;top:-1px;left:12%;right:12%;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,'+qBord+',transparent);"></div>' +
+
+  '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">' +
+    '<div style="width:54px;height:54px;border-radius:14px;background:'+qBgIcon+';border:1px solid '+qBorderIcon+';display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0;">'+qIcon+'</div>' +
+    '<div><div style="font-size:1.6rem;font-weight:700;color:'+qColor+';">'+qTitle+'</div>' +
+    '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">'+domain+'</div></div>' +
+  '</div>' +
+
+  '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 14px;font-size:0.72rem;color:rgba(255,255,255,0.35);word-break:break-all;margin-bottom:16px;font-family:monospace;">'+data.url+'</div>' +
+
+  '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:16px;">' +
+    '<div style="font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:10px;">⚡ QUICK SCAN RESULT</div>' +
+    '<p style="font-size:0.88rem;line-height:1.65;color:rgba(255,255,255,0.8);">'+qMsg+'</p>' +
+  '</div>' +
+
+  '<div style="margin-bottom:16px;">' +
+    '<div style="display:flex;justify-content:space-between;font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:7px;"><span>'+q.sc+'</span><span style="color:'+qColor+';font-weight:700;">'+score+'/100</span></div>' +
+    '<div style="height:5px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;"><div id="QSB" style="height:100%;min-width:4px;border-radius:999px;background:linear-gradient(90deg,'+qGrad+');width:0%;transition:width 1.2s ease;"></div></div>' +
+  '</div>' +
+
+  '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;">' +
+      '<div style="font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">'+q.ri+'</div>' +
+      '<div style="font-size:0.9rem;font-weight:600;color:'+qRiskCol+';">'+qRisk+'</div>' +
+    '</div>' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;">' +
+      '<div style="font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">'+q.ht+'</div>' +
+      '<div style="font-size:0.9rem;font-weight:600;color:'+(data.https?'#00e5a0':'#ff4444')+';">'+(data.https?'✓ Yes':'✗ No')+'</div>' +
+    '</div>' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;">' +
+      '<div style="font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:5px;">'+q.fl+'</div>' +
+      '<div style="font-size:0.9rem;font-weight:600;color:'+(flags.length>0?'#ffaa00':'#00e5a0')+';">'+flags.length+' Found</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-left:3px solid '+qBord+';border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:0.78rem;color:rgba(255,255,255,0.4);">'+q.note+'</div>' +
+
+  '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    (isSafe?'<button style="width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;background:linear-gradient(135deg,#00e0a0,#00b8d9);color:#000;font-family:Inter,sans-serif;font-size:0.9rem;font-weight:600;" onclick="window.open(\''+data.url+'\',\'_blank\')">✓ '+q.op+'</button>':'') +
+    '<button style="width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-family:Inter,sans-serif;font-size:0.9rem;font-weight:600;" onclick="window.location.href=\'/\'">'+q.ba+'</button>' +
+  '</div></div>';
+
+setTimeout(function(){ var b=document.getElementById('QSB'); if(b) b.style.width=(score<2?2:score)+'%'; },200);
+
+} else {
+
+// ════════════════════════════════════════════════════════════════
+// FULL SCAN — Detailed Interface with AI Description
+// ════════════════════════════════════════════════════════════════
+
+var T = {
+  en:{safe:'SAFE',susp:'SUSPICIOUS',ai:'AI ANALYSIS',ts:'THREAT SCORE',ht:'HTTPS',da:'DOMAIN AGE',rl:'RISK LEVEL',st:'SCAN TYPE',ti:'THREAT INDICATORS',nf:'No threat indicators detected.',ou:'Open This URL Safely',sa:'Scan Another URL',enc:'Encrypted',ns:'Not Secure',unk:'Unknown',low:'Low',med:'Medium',hi:'High',fs:'Full Scan'},
+  ml:{safe:'സുരക്ഷിതം',susp:'സംശയാസ്പദം',ai:'AI വിശകലനം',ts:'ഭീഷണി സ്കോർ',ht:'HTTPS',da:'ഡൊമെയ്ൻ പ്രായം',rl:'അപകട നില',st:'സ്കാൻ തരം',ti:'ഭീഷണി സൂചകങ്ങൾ',nf:'ഭീഷണി സൂചകങ്ങൾ കണ്ടെത്തിയില്ല.',ou:'URL സുരക്ഷിതമായി തുറക്കുക',sa:'മറ്റൊരു URL',enc:'എൻക്രിപ്റ്റ് ചെയ്തത്',ns:'സുരക്ഷിതമല്ല',unk:'അജ്ഞാതം',low:'കുറഞ്ഞത്',med:'മധ്യം',hi:'ഉയർന്നത്',fs:'പൂർണ്ണ സ്കാൻ'},
+  hi:{safe:'सुरक्षित',susp:'संदिग्ध',ai:'AI विश्लेषण',ts:'खतरा स्कोर',ht:'HTTPS',da:'डोमेन आयु',rl:'जोखिम स्तर',st:'स्कैन प्रकार',ti:'खतरे के संकेतक',nf:'कोई खतरा नहीं।',ou:'URL सुरक्षित खोलें',sa:'दूसरा URL',enc:'एन्क्रिप्टेड',ns:'असुरक्षित',unk:'अज्ञात',low:'कम',med:'मध्यम',hi:'उच्च',fs:'पूर्ण स्कैन'},
+  ta:{safe:'பாதுகாப்பானது',susp:'சந்தேகமானது',ai:'AI பகுப்பாய்வு',ts:'அச்சுறுத்தல் மதிப்பெண்',ht:'HTTPS',da:'டொமைன் வயது',rl:'அபாய நிலை',st:'ஸ்கேன் வகை',ti:'அச்சுறுத்தல் குறிகாட்டிகள்',nf:'அச்சுறுத்தல்கள் இல்லை.',ou:'URL திற',sa:'வேறொரு URL',enc:'மறைகுறியாக்கம்',ns:'பாதுகாப்பற்றது',unk:'தெரியாத',low:'குறைவு',med:'நடுத்தரம்',hi:'அதிகம்',fs:'முழு ஸ்கேன்'},
+  te:{safe:'సురక్షితం',susp:'సందేహాస్పదం',ai:'AI విశ్లేషణ',ts:'బెదిరింపు స్కోర్',ht:'HTTPS',da:'డొమైన్ వయసు',rl:'ప్రమాద స్థాయి',st:'స్కాన్ రకం',ti:'బెదిరింపు సూచికలు',nf:'బెదిరింపులు లేవు.',ou:'URL తెరవండి',sa:'మరొక URL',enc:'గుప్తీకరించబడింది',ns:'సురక్షితం కాదు',unk:'తెలియదు',low:'తక్కువ',med:'మధ్యస్థం',hi:'అధికం',fs:'పూర్తి స్కాన్'},
+  kn:{safe:'ಸುರಕ್ಷಿತ',susp:'ಸಂಶಯಾಸ್ಪದ',ai:'AI ವಿಶ್ಲೇಷಣೆ',ts:'ಬೆದರಿಕೆ ಸ್ಕೋರ್',ht:'HTTPS',da:'ಡೊಮೈನ್ ವಯಸ್ಸು',rl:'ಅಪಾಯ ಮಟ್ಟ',st:'ಸ್ಕ್ಯಾನ್ ಪ್ರಕಾರ',ti:'ಬೆದರಿಕೆ ಸೂಚಕಗಳು',nf:'ಬೆದರಿಕೆಗಳಿಲ್ಲ.',ou:'URL ತೆರೆಯಿರಿ',sa:'ಮತ್ತೊಂದು URL',enc:'ಎನ್‌ಕ್ರಿಪ್ಟ್',ns:'ಸುರಕ್ಷಿತವಲ್ಲ',unk:'ಅಜ್ಞಾತ',low:'ಕಡಿಮೆ',med:'ಮಧ್ಯಮ',hi:'ಹೆಚ್ಚು',fs:'ಪೂರ್ಣ ಸ್ಕ್ಯಾನ್'},
+  fr:{safe:'SÉCURISÉ',susp:'SUSPECT',ai:'ANALYSE IA',ts:'Score de menace',ht:'HTTPS',da:'Âge du domaine',rl:'Niveau de risque',st:'Type de scan',ti:'Indicateurs de menace',nf:'Aucune menace.',ou:'Ouvrir en sécurité',sa:'Autre URL',enc:'Chiffré',ns:'Non sécurisé',unk:'Inconnu',low:'Faible',med:'Moyen',hi:'Élevé',fs:'Scan complet'},
+  de:{safe:'SICHER',susp:'VERDÄCHTIG',ai:'KI-ANALYSE',ts:'Bedrohungsscore',ht:'HTTPS',da:'Domain-Alter',rl:'Risikoniveau',st:'Scantyp',ti:'Bedrohungsindikatoren',nf:'Keine Bedrohungen.',ou:'URL sicher öffnen',sa:'Andere URL',enc:'Verschlüsselt',ns:'Nicht sicher',unk:'Unbekannt',low:'Niedrig',med:'Mittel',hi:'Hoch',fs:'Vollständiger Scan'},
+  es:{safe:'SEGURO',susp:'SOSPECHOSO',ai:'ANÁLISIS IA',ts:'Puntuación',ht:'HTTPS',da:'Edad del dominio',rl:'Nivel de riesgo',st:'Tipo de escaneo',ti:'Indicadores de amenaza',nf:'Sin amenazas.',ou:'Abrir URL',sa:'Otra URL',enc:'Cifrado',ns:'No seguro',unk:'Desconocido',low:'Bajo',med:'Medio',hi:'Alto',fs:'Escaneo completo'},
+  ar:{safe:'آمن',susp:'مشبوه',ai:'تحليل الذكاء الاصطناعي',ts:'درجة التهديد',ht:'HTTPS',da:'عمر النطاق',rl:'مستوى الخطر',st:'نوع الفحص',ti:'مؤشرات التهديد',nf:'لا تهديدات.',ou:'فتح الرابط',sa:'رابط آخر',enc:'مشفر',ns:'غير آمن',unk:'غير معروف',low:'منخفض',med:'متوسط',hi:'عالٍ',fs:'فحص كامل'},
+  zh:{safe:'安全',susp:'可疑',ai:'AI分析',ts:'威胁评分',ht:'HTTPS',da:'域名年龄',rl:'风险等级',st:'扫描类型',ti:'威胁指标',nf:'未检测到威胁。',ou:'安全打开',sa:'其他网址',enc:'已加密',ns:'不安全',unk:'未知',low:'低',med:'中',hi:'高',fs:'完整扫描'},
+  ja:{safe:'安全',susp:'不審',ai:'AI分析',ts:'脅威スコア',ht:'HTTPS',da:'ドメイン年齢',rl:'リスク',st:'スキャン',ti:'脅威',nf:'脅威なし。',ou:'URLを開く',sa:'別のURL',enc:'暗号化済み',ns:'非セキュア',unk:'不明',low:'低',med:'中',hi:'高',fs:'フルスキャン'},
+  ru:{safe:'БЕЗОПАСНО',susp:'ПОДОЗРИТЕЛЬНО',ai:'АНАЛИЗ ИИ',ts:'Оценка угрозы',ht:'HTTPS',da:'Возраст домена',rl:'Уровень риска',st:'Тип сканирования',ti:'Индикаторы угроз',nf:'Угрозы не найдены.',ou:'Открыть безопасно',sa:'Другой URL',enc:'Зашифровано',ns:'Не защищено',unk:'Неизвестно',low:'Низкий',med:'Средний',hi:'Высокий',fs:'Полное сканирование'},
+  pt:{safe:'SEGURO',susp:'SUSPEITO',ai:'ANÁLISE IA',ts:'Pontuação',ht:'HTTPS',da:'Idade do domínio',rl:'Nível de risco',st:'Tipo de verificação',ti:'Indicadores de ameaça',nf:'Sem ameaças.',ou:'Abrir com segurança',sa:'Outro URL',enc:'Encriptado',ns:'Não seguro',unk:'Desconhecido',low:'Baixo',med:'Médio',hi:'Alto',fs:'Verificação completa'}
+};
+
+var L = T[lang] || T['en'];
+var verdict = isSafe ? L.safe : L.susp;
+var age = data.domain_age_days != null ? (data.domain_age_days+' days') : L.unk;
+var risk = score < 30 ? L.low : score < 60 ? L.med : L.hi;
+var riskCol = score < 30 ? '#00e5a0' : score < 60 ? '#ffaa00' : '#ff4444';
+var scoreCol = isSafe ? '#00e5a0' : '#ffaa00';
+var scoreGrad = isSafe ? '#00b87a,#00e5a0' : '#e67e00,#ffaa00';
+var icon = isSafe ? '✅' : '⚠️';
+
+var flagsHtml = flags.length
+  ? flags.map(function(f){ return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.83rem;color:rgba(255,255,255,0.65);"><span style="color:#ffaa00;font-size:0.5rem;margin-top:6px;flex-shrink:0;">◆</span><span>'+f+'</span></div>'; }).join('')
+  : '<p style="font-size:0.83rem;color:rgba(255,255,255,0.3);font-style:italic;padding:8px 0;">'+L.nf+'</p>';
+
+document.getElementById('RC').innerHTML =
+  '<div style="background:rgba(12,12,12,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:28px;padding:32px 28px;backdrop-filter:blur(80px);-webkit-backdrop-filter:blur(80px);box-shadow:0 50px 100px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.08);animation:fadeUp 0.5s ease;position:relative;overflow:hidden;">' +
+  '<div style="position:absolute;top:-1px;left:12%;right:12%;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,'+(isSafe?'#00ff88,#00e5a0':'#ff9900,#ffcc00')+',transparent);"></div>' +
+
+  '<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">' +
+    '<div style="width:58px;height:58px;border-radius:16px;background:'+(isSafe?'rgba(0,229,160,0.1)':'rgba(255,153,0,0.1)')+';border:1px solid '+(isSafe?'rgba(0,229,160,0.25)':'rgba(255,153,0,0.25)')+';display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;">'+icon+'</div>' +
+    '<div><div style="font-size:1.7rem;font-weight:700;letter-spacing:-0.5px;color:'+scoreCol+';">'+verdict+'</div>' +
+    '<div style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-top:3px;word-break:break-all;">'+domain+'</div></div>' +
+  '</div>' +
+
+  '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 14px;font-size:0.75rem;color:rgba(255,255,255,0.4);word-break:break-all;margin-bottom:20px;font-family:monospace;">'+data.url+'</div>' +
+
+  '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:18px;margin-bottom:20px;">' +
+    '<div style="display:flex;align-items:center;gap:8px;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:12px;"><span>🤖</span> '+L.ai+'</div>' +
+    '<div id="DESC"><p style="color:rgba(255,255,255,0.3);font-size:0.82rem;">...</p></div>' +
+  '</div>' +
+
+  '<div style="margin-bottom:20px;">' +
+    '<div style="display:flex;justify-content:space-between;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;"><span>'+L.ts+'</span><span style="font-weight:600;color:'+scoreCol+';">'+score+'/100</span></div>' +
+    '<div style="height:6px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;"><div id="SB" style="height:100%;border-radius:999px;min-width:4px;background:linear-gradient(90deg,'+scoreGrad+');width:0%;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);"></div></div>' +
+  '</div>' +
+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;"><div style="font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:4px;">'+L.ht+'</div><div style="font-size:0.88rem;font-weight:600;color:'+(data.https?'#00e5a0':'#ff4444')+';">'+(data.https?'✓ '+L.enc:'✗ '+L.ns)+'</div></div>' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;"><div style="font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:4px;">'+L.da+'</div><div style="font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.6);">'+age+'</div></div>' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;"><div style="font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:4px;">'+L.rl+'</div><div style="font-size:0.88rem;font-weight:600;color:'+riskCol+';">'+risk+'</div></div>' +
+    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;"><div style="font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:4px;">'+L.st+'</div><div style="font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.6);">🛡 '+L.fs+'</div></div>' +
+  '</div>' +
+
+  '<div style="margin-bottom:20px;"><div style="font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:12px;">'+L.ti+'</div>'+flagsHtml+'</div>' +
+
+  '<div style="display:flex;flex-direction:column;gap:10px;">' +
+    (isSafe?'<button style="width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;background:linear-gradient(135deg,#00e0a0,#00b8d9);color:#000;font-family:Inter,sans-serif;font-size:0.88rem;font-weight:600;box-shadow:0 4px 14px rgba(0,200,150,0.3);" onclick="window.open(\''+data.url+'\',\'_blank\')">✓ '+L.ou+'</button>':'') +
+    '<button style="width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-family:Inter,sans-serif;font-size:0.88rem;font-weight:600;" onclick="window.location.href=\'/\'">← '+L.sa+'</button>' +
+  '</div></div>';
+
+setTimeout(function(){ var b=document.getElementById('SB'); if(b) b.style.width=(score<2?2:score)+'%'; },200);
+
+// ── AI DESCRIPTION ─────────────────────────────────────────────
+var safeDomains = ['google.com','youtube.com','facebook.com','amazon.com','microsoft.com','apple.com','github.com','wikipedia.org','twitter.com','instagram.com','linkedin.com','netflix.com','reddit.com','stackoverflow.com','whatsapp.com','zoom.us','dropbox.com','spotify.com'];
+var isWK = safeDomains.some(function(s){ return domain.endsWith(s); });
+var hasIP = flags.some(function(f){ return f.toLowerCase().indexOf('ip address')>-1; });
+var hasBrand = flags.some(function(f){ return f.toLowerCase().indexOf('impersonation')>-1||f.toLowerCase().indexOf('brand')>-1; });
+var isShort = flags.some(function(f){ return f.toLowerCase().indexOf('shortener')>-1; });
+var isNew = flags.some(function(f){ return f.toLowerCase().indexOf('days old')>-1; });
+var hasKw = flags.some(function(f){ return f.toLowerCase().indexOf('keyword')>-1; });
+var hasAt = flags.some(function(f){ return f.toLowerCase().indexOf('@')>-1; });
+
+var D = {
+  en:{
+    wk:'<strong>'+domain+'</strong> is a globally recognized, well-established, and highly trusted domain.<br><br><strong>Security checks performed:</strong><br>• Domain age and registration history ✓<br>• HTTPS encryption status ✓<br>• URL structure and length analysis ✓<br>• Suspicious keyword concentration ✓<br>• TLD reputation scoring ✓<br>• Brand impersonation detection ✓<br>• IP address vs domain name ✓<br>• URL shortener detection ✓<br>• Character entropy analysis ✓<br><br>'+(data.https?'<strong>HTTPS Encryption: Active</strong> — all data is fully encrypted using TLS/SSL protocols.':'<strong>Note:</strong> This URL does not use HTTPS encryption.')+''+(data.domain_age_days?'<br><br><strong>Domain Age: '+data.domain_age_days+' days</strong> — established and trusted.':'')+' <br><br><strong>Final Result: ZERO threat indicators detected.</strong> No phishing patterns, no suspicious redirects, no malicious keywords, no brand impersonation. This is a safe and legitimate website.',
+    sf:'<strong>'+domain+'</strong> passed our security analysis with a score of <strong>'+score+'/100</strong>.<br><br><strong>Checks completed:</strong><br>• URL structure — Normal ✓<br>• Keyword analysis — No suspicious terms ✓<br>• HTTPS — '+(data.https?'Active ✓':'Not present ⚠️')+'<br>• Brand impersonation — None detected ✓<br>• IP address usage — None ✓<br>• URL shortener — Not detected ✓<br><br>'+(data.https?'<strong>HTTPS encryption is active.</strong>':'<strong>Note:</strong> No HTTPS encryption detected.')+''+(data.domain_age_days?'<br>Domain age: <strong>'+data.domain_age_days+' days</strong>.':'')+' <br><br><strong>No threats detected.</strong> Always exercise caution with unfamiliar websites.',
+    ip:'🚨 <strong>CRITICAL — IP Address Attack:</strong> This URL uses a raw IP address (<strong>'+domain+'</strong>) instead of a domain name. Legitimate websites never use IP addresses directly. This is a classic phishing technique to avoid blacklists. Score: <strong>'+score+'/100</strong>. Do NOT visit this URL.',
+    br:'🚨 <strong>PHISHING — Brand Impersonation:</strong> This URL mimics a trusted brand to steal your credentials. Attackers create identical-looking fake pages to capture passwords and payment info. Score: <strong>'+score+'/100</strong> with '+flags.length+' indicators. Never enter credentials here.',
+    sh:'⚠️ <strong>URL Shortener Detected:</strong> This link hides its real destination using a URL shortening service. Phishing attackers heavily abuse URL shorteners to bypass security filters. Score: <strong>'+score+'/100</strong>. Avoid clicking shortened links from unknown sources.',
+    nd:'⚠️ <strong>New Domain Alert:</strong> <strong>'+domain+'</strong> was registered only <strong>'+(data.domain_age_days||'a few')+' days ago</strong>. Cybercriminals register fresh domains for phishing campaigns and abandon them before getting blacklisted. Score: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>Credential Harvesting Attempt:</strong> Contains suspicious keywords (login, verify, secure, account, confirm, update, password). These are hallmarks of phishing pages. Score: <strong>'+score+'/100</strong> with <strong>'+flags.length+' indicators</strong>. Never enter personal information.',
+    at:'🚨 <strong>URL Redirect Attack — @ Symbol:</strong> Browsers ignore everything before the @ symbol, redirecting to the domain after it. This is designed to make phishing URLs look legitimate. Score: <strong>'+score+'/100</strong>. Do NOT visit.',
+    gn:'🚨 <strong>'+flags.length+' threat indicators detected.</strong> Danger score: <strong>'+score+'/100</strong>.<br><br>'+(data.https?'':'No HTTPS encryption.<br>')+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br>Do not visit this URL or enter any personal information.'
+  },
+  ml:{
+    wk:'<strong>'+domain+'</strong> ഒരു ആഗോളതലത്തിൽ അംഗീകരിക്കപ്പെട്ട, ഉയർന്ന വിശ്വാസ്യതയുള്ള ഡൊമെയ്‌നാണ്.<br><br><strong>നടത്തിയ സുരക്ഷാ പരിശോധനകൾ:</strong><br>• ഡൊമെയ്ൻ പ്രായം ✓<br>• HTTPS എൻക്രിപ്ഷൻ ✓<br>• URL ഘടന ✓<br>• കീവേഡ് വിശകലനം ✓<br>• TLD പ്രശസ്തി ✓<br>• ബ്രാൻഡ് ആൾമാറാട്ടം ✓<br>• IP വിലാസ ഉപയോഗം ✓<br><br>'+(data.https?'<strong>HTTPS എൻക്രിപ്ഷൻ: സജീവം</strong> — TLS/SSL ഉപയോഗിച്ച് ഡേറ്റ എൻക്രിപ്റ്റ് ചെയ്തിരിക്കുന്നു.':'<strong>ശ്രദ്ധ:</strong> HTTPS ഇല്ല.')+''+(data.domain_age_days?'<br><br><strong>ഡൊമെയ്ൻ പ്രായം: '+data.domain_age_days+' ദിവസം</strong>.':'')+' <br><br><strong>ഒരൊറ്റ ഭീഷണി സൂചകവും കണ്ടെത്തിയില്ല.</strong> ഇത് ഒരു സുരക്ഷിത വെബ്‌സൈറ്റാണ്.',
+    sf:'<strong>'+domain+'</strong> <strong>'+score+'/100</strong> സ്കോറോടെ സുരക്ഷാ പരിശോധന പൂർത്തിയാക്കി.<br><br>'+(data.https?'HTTPS എൻക്രിപ്ഷൻ സജീവമാണ്.':'HTTPS ഇല്ല.')+''+(data.domain_age_days?'<br>ഡൊമെയ്ൻ പ്രായം: '+data.domain_age_days+' ദിവസം.':'')+' <br><br><strong>ഭീഷണി സൂചകങ്ങൾ കണ്ടെത്തിയില്ല.</strong> അജ്ഞാത വെബ്‌സൈറ്റുകളിൽ ജാഗ്രത പുലർത്തുക.',
+    ip:'🚨 <strong>IP വിലാസ ആക്രമണം:</strong> '+domain+' ഒരു IP വിലാസം ഉപയോഗിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>. സന്ദർശിക്കരുത്.',
+    br:'🚨 <strong>ബ്രാൻഡ് ആൾമാറാട്ടം:</strong> ഒരു വിശ്വസ്ത ബ്രാൻഡ് അനുകരിക്കുന്നു. <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>. ഒരിക്കലും ലോഗിൻ ചെയ്യരുത്.',
+    sh:'⚠️ <strong>URL ഷോർട്ടനർ:</strong> യഥാർത്ഥ ലക്ഷ്യം മറഞ്ഞിരിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ <strong>പുതിയ ഡൊമെയ്ൻ:</strong> '+(data.domain_age_days||'കുറച്ച്')+' ദിവസം മുമ്പ് രജിസ്റ്റർ ചെയ്തതാണ്. സ്കോർ: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>ക്രെഡൻഷ്യൽ ഹാർവെസ്റ്റിംഗ്:</strong> login, verify, secure, account, confirm, password — <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>. വ്യക്തിഗത വിവരങ്ങൾ നൽകരുത്.',
+    at:'🚨 <strong>@ ചിഹ്ന ആക്രമണം:</strong> @ ചിഹ്നത്തിന് മുമ്പുള്ളതെല്ലാം ബ്രൗസർ അവഗണിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>. സന്ദർശിക്കരുത്.',
+    gn:'🚨 <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ.</strong> സ്കോർ: <strong>'+score+'/100</strong>.<br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br>ഈ URL സന്ദർശിക്കരുത്.'
+  },
+  hi:{
+    wk:'<strong>'+domain+'</strong> एक विश्वसनीय डोमेन है।<br><br><strong>की गई जांच:</strong><br>• डोमेन आयु ✓<br>• HTTPS ✓<br>• URL संरचना ✓<br>• कीवर्ड विश्लेषण ✓<br>• ब्रांड अनुकरण ✓<br><br>'+(data.https?'<strong>HTTPS सक्रिय</strong>':'<strong>ध्यान:</strong> HTTPS नहीं')+''+(data.domain_age_days?'<br><br><strong>डोमेन आयु: '+data.domain_age_days+' दिन</strong>':'')+' <br><br><strong>कोई खतरा नहीं।</strong> यह सुरक्षित वेबसाइट है।',
+    sf:'<strong>'+domain+'</strong> <strong>'+score+'/100</strong> स्कोर के साथ पास।<br><br>'+(data.https?'HTTPS सक्रिय।':'HTTPS नहीं।')+''+(data.domain_age_days?'<br>डोमेन आयु: '+data.domain_age_days+' दिन।':'')+' <br><br><strong>कोई खतरा नहीं।</strong>',
+    ip:'🚨 <strong>IP पते का हमला।</strong> स्कोर: <strong>'+score+'/100</strong>। न जाएं।',
+    br:'🚨 <strong>ब्रांड अनुकरण।</strong> '+flags.length+' संकेतक, स्कोर: <strong>'+score+'/100</strong>।',
+    sh:'⚠️ <strong>URL शॉर्टनर।</strong> स्कोर: <strong>'+score+'/100</strong>।',
+    nd:'⚠️ <strong>नया डोमेन।</strong> स्कोर: <strong>'+score+'/100</strong>।',
+    kw:'⚠️ <strong>संदिग्ध कीवर्ड।</strong> '+flags.length+' संकेतक, स्कोर: <strong>'+score+'/100</strong>।',
+    at:'🚨 <strong>@ प्रतीक।</strong> स्कोर: <strong>'+score+'/100</strong>।',
+    gn:'🚨 <strong>'+flags.length+' खतरे।</strong> स्कोर: <strong>'+score+'/100</strong>।<br>'+flags.map(function(f){ return '• '+f; }).join('<br>')
+  },
+  ta:{
+    wk:'<strong>'+domain+'</strong> நம்பகமான டொமைன்.<br><br>'+(data.https?'HTTPS செயலில்.':'HTTPS இல்லை.')+''+(data.domain_age_days?'<br>டொமைன் வயது: '+data.domain_age_days+' நாட்கள்.':'')+' <br><br><strong>அச்சுறுத்தல்கள் இல்லை.</strong>',
+    sf:'<strong>'+domain+'</strong> '+score+'/100.<br><br>'+(data.https?'HTTPS உள்ளது.':'HTTPS இல்லை.')+' <br><br><strong>அச்சுறுத்தல்கள் இல்லை.</strong>',
+    ip:'🚨 IP முகவரி. மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    br:'🚨 பிராண்ட் மோசடி. மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    sh:'⚠️ சுருக்கப்பட்ட URL. மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ புதிய டொமைன். மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ சந்தேக வார்த்தைகள். மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    at:'🚨 @ குறியீடு. மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    gn:'🚨 '+flags.length+' அச்சுறுத்தல்கள். மதிப்பெண்: <strong>'+score+'/100</strong>.'
+  },
+  te:{
+    wk:'<strong>'+domain+'</strong> విశ్వసనీయ డొమైన్.<br><br>'+(data.https?'HTTPS సక్రియం.':'HTTPS లేదు.')+''+(data.domain_age_days?'<br>డొమైన్ వయసు: '+data.domain_age_days+' రోజులు.':'')+' <br><br><strong>బెదిరింపులు లేవు.</strong>',
+    sf:'<strong>'+domain+'</strong> '+score+'/100.<br><br>'+(data.https?'HTTPS ఉంది.':'HTTPS లేదు.')+' <br><br><strong>బెదిరింపులు లేవు.</strong>',
+    ip:'🚨 IP చిరునామా. స్కోర్: <strong>'+score+'/100</strong>.',
+    br:'🚨 బ్రాండ్ మోసం. స్కోర్: <strong>'+score+'/100</strong>.',
+    sh:'⚠️ చిన్న URL. స్కోర్: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ కొత్త డొమైన్. స్కోర్: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ అనుమానాస్పద పదాలు. స్కోర్: <strong>'+score+'/100</strong>.',
+    at:'🚨 @ గుర్తు. స్కోర్: <strong>'+score+'/100</strong>.',
+    gn:'🚨 '+flags.length+' బెదిరింపులు. స్కోర్: <strong>'+score+'/100</strong>.'
+  },
+  kn:{
+    wk:'<strong>'+domain+'</strong> ವಿಶ್ವಾಸಾರ್ಹ ಡೊಮೈನ್.<br><br>'+(data.https?'HTTPS ಸಕ್ರಿಯ.':'HTTPS ಇಲ್ಲ.')+''+(data.domain_age_days?'<br>ಡೊಮೈನ್ ವಯಸ್ಸು: '+data.domain_age_days+' ದಿನಗಳು.':'')+' <br><br><strong>ಬೆದರಿಕೆಗಳಿಲ್ಲ.</strong>',
+    sf:'<strong>'+domain+'</strong> '+score+'/100.<br><br>'+(data.https?'HTTPS ಸಕ್ರಿಯ.':'HTTPS ಇಲ್ಲ.')+' <br><br><strong>ಬೆದರಿಕೆಗಳಿಲ್ಲ.</strong>',
+    ip:'🚨 IP ವಿಳಾಸ. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    br:'🚨 ಬ್ರಾಂಡ್ ವಂಚನೆ. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    sh:'⚠️ ಸಂಕ್ಷಿಪ್ತ URL. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ ಹೊಸ ಡೊಮೈನ್. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ ಸಂಶಯಾಸ್ಪದ ಕೀವರ್ಡ್‌ಗಳು. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    at:'🚨 @ ಚಿಹ್ನೆ. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    gn:'🚨 '+flags.length+' ಬೆದರಿಕೆಗಳು. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.'
+  }
+};
+
+var Dl = D[lang] || D['en'];
+var txt = '';
+if(isSafe && isWK) txt = Dl.wk;
+else if(isSafe) txt = Dl.sf;
+else if(hasIP) txt = Dl.ip;
+else if(hasBrand) txt = Dl.br;
+else if(isShort) txt = Dl.sh;
+else if(isNew) txt = Dl.nd;
+else if(hasKw) txt = Dl.kw;
+else if(hasAt) txt = Dl.at;
+else txt = Dl.gn;
+
+var el = document.getElementById('DESC');
+if(el) el.innerHTML = '<p style="font-size:0.88rem;line-height:1.7;color:rgba(255,255,255,0.75);">'+txt+'</p>';
+
+} // end full scan
+} // end if raw
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeLinks – URL Phishing Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Inter',sans-serif;color:#fff;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;background:#000;
+    }
+
+    /* ══ BACKGROUND ══ */
+    .bg-wrap{position:fixed;inset:0;z-index:0}
+    .bg-image{
+      position:absolute;inset:-40px;
+      background-image:url('/static/batman.jpg');
+      background-size:cover;background-position:center;
+      filter:blur(28px) brightness(0.18) saturate(0.9);
+      transform:scale(1.1);
+      opacity:0;transition:opacity 1.4s ease;
+    }
+    .bg-image.show{opacity:1}
+    .bg-overlay{
+      position:absolute;inset:0;
+      background:radial-gradient(ellipse 90% 90% at 50% 50%,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.8) 100%);
+      opacity:0;transition:opacity 1.4s ease;
+    }
+    .bg-overlay.show{opacity:1}
+
+    /* ══ INTRO SCREEN ══ */
+    #intro{
+      position:fixed;inset:0;z-index:100;
+      background:#000;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+    }
+    #intro.hide{
+      animation:introHide 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
+      pointer-events:none;
+    }
+    @keyframes introHide{
+      0%{opacity:1;transform:scale(1)}
+      100%{opacity:0;transform:scale(1.06)}
+    }
+
+    .scan-line{
+      position:absolute;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent,rgba(0,229,160,0.9),transparent);
+      animation:scanDown 1.8s ease-in-out forwards;
+      z-index:1;
+    }
+    @keyframes scanDown{
+      0%{top:-10px;opacity:0}
+      10%{opacity:1}
+      100%{top:100vh;opacity:0.2}
+    }
+
+    .intro-ring{
+      position:absolute;border-radius:50%;pointer-events:none;
+      animation:ringPulse 2.5s ease-in-out infinite;
+    }
+    .intro-ring:nth-child(2){width:340px;height:340px;border:1px solid rgba(0,229,160,0.08)}
+    .intro-ring:nth-child(3){width:520px;height:520px;border:1px solid rgba(0,229,160,0.04);animation-delay:0.8s}
+    .intro-ring:nth-child(4){width:700px;height:700px;border:1px solid rgba(0,229,160,0.02);animation-delay:1.5s}
+    @keyframes ringPulse{
+      0%,100%{transform:scale(1);opacity:0.6}
+      50%{transform:scale(1.08);opacity:0.1}
+    }
+
+    .intro-content{
+      position:relative;z-index:2;
+      display:flex;flex-direction:column;
+      align-items:center;
+    }
+
+    .intro-spikes{
+      display:flex;justify-content:center;align-items:flex-end;gap:5px;
+      margin-bottom:20px;
+      opacity:0;
+      animation:fadeIn 0.1s ease 0.5s forwards;
+    }
+    .intro-spikes .sp{
+      background:#00e5a0;
+      border-radius:3px 3px 0 0;
+      box-shadow:0 0 16px rgba(0,229,160,0.9),0 0 40px rgba(0,229,160,0.3);
+      transform:scaleY(0);transform-origin:bottom;
+    }
+    .sp:nth-child(1){width:9px;height:18px;animation:spikeUp 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards}
+    .sp:nth-child(2){width:9px;height:32px;animation:spikeUp 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.72s forwards}
+    .sp:nth-child(3){width:9px;height:13px;animation:spikeUp 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.84s forwards}
+    .sp:nth-child(4){width:9px;height:32px;animation:spikeUp 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.96s forwards}
+    .sp:nth-child(5){width:9px;height:18px;animation:spikeUp 0.4s cubic-bezier(0.34,1.56,0.64,1) 1.08s forwards}
+    @keyframes spikeUp{to{transform:scaleY(1)}}
+
+    .intro-title{
+      font-family:'Orbitron',monospace;
+      font-size:clamp(2.8rem,9vw,5.5rem);
+      font-weight:900;letter-spacing:8px;
+      background:linear-gradient(135deg,#ffffff 0%,#00e5a0 40%,#00ccff 70%,#ffffff 100%);
+      background-size:300% auto;
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      opacity:0;
+      animation:titleReveal 0.9s cubic-bezier(0.34,1.2,0.64,1) 1.2s forwards,
+                shimmer 2.5s linear 2.1s infinite;
+      line-height:1;
+    }
+    @keyframes titleReveal{
+      from{opacity:0;transform:translateY(30px) scale(0.9);letter-spacing:24px}
+      to{opacity:1;transform:translateY(0) scale(1);letter-spacing:8px}
+    }
+    @keyframes shimmer{to{background-position:300% center}}
+
+    .intro-sub{
+      font-size:0.78rem;letter-spacing:7px;
+      text-transform:uppercase;
+      color:transparent;
+      margin-top:14px;
+      overflow:hidden;white-space:nowrap;
+      width:0;
+      border-right:2px solid rgba(0,229,160,0.7);
+      animation:
+        typeWidth 0.7s steps(22,end) 2.0s forwards,
+        fadeColor 0.1s ease 2.0s forwards,
+        cursorBlink 0.5s step-end 2.7s 5,
+        removeCursor 0.1s ease 5.2s forwards;
+    }
+    @keyframes typeWidth{to{width:290px}}
+    @keyframes fadeColor{to{color:rgba(255,255,255,0.4)}}
+    @keyframes cursorBlink{0%,100%{border-color:rgba(0,229,160,0.7)}50%{border-color:transparent}}
+    @keyframes removeCursor{to{border-color:transparent}}
+
+    .intro-progress-wrap{
+      margin-top:44px;width:220px;height:2px;
+      background:rgba(255,255,255,0.07);
+      border-radius:999px;overflow:hidden;
+      opacity:0;animation:fadeIn 0.3s ease 2.3s forwards;
+    }
+    .intro-progress{
+      height:100%;width:0%;
+      background:linear-gradient(90deg,#00b87a,#00e5a0,#00ccff);
+      border-radius:999px;
+      animation:loadBar 0.9s cubic-bezier(0.4,0,0.2,1) 2.3s forwards;
+      box-shadow:0 0 10px rgba(0,229,160,0.7);
+    }
+    @keyframes loadBar{to{width:100%}}
+
+    .intro-status{
+      margin-top:14px;font-size:0.62rem;letter-spacing:3px;
+      color:rgba(0,229,160,0.5);text-transform:uppercase;
+      opacity:0;animation:fadeIn 0.3s ease 2.3s forwards;
+      min-height:16px;
+    }
+
+    .particle{
+      position:absolute;width:2px;height:2px;
+      background:#00e5a0;border-radius:50%;
+      box-shadow:0 0 6px rgba(0,229,160,0.8);
+      opacity:0;
+    }
+    @keyframes particleFloat{
+      0%{transform:translateY(100vh) translateX(0);opacity:0}
+      10%{opacity:0.5}
+      90%{opacity:0.2}
+      100%{transform:translateY(-20px) translateX(var(--dx));opacity:0}
+    }
+
+    @keyframes fadeIn{to{opacity:1}}
+
+    /* ══ MAIN PAGE ══ */
+    #mainPage{
+      position:relative;z-index:1;
+      width:100%;max-width:460px;
+      padding:30px 20px 20px;
+      display:flex;flex-direction:column;align-items:center;
+      opacity:0;transform:translateY(40px);
+      transition:opacity 0.9s ease,transform 0.9s ease;
+      pointer-events:none;
+    }
+    #mainPage.show{
+      opacity:1;transform:translateY(0);
+      pointer-events:all;
+    }
+
+    /* ══ CARD ══ */
+    .card{
+      width:100%;
+      background:rgba(12,12,12,0.72);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:28px;
+      padding:24px 20px 28px;
+      backdrop-filter:blur(80px) saturate(180%);
+      -webkit-backdrop-filter:blur(80px) saturate(180%);
+      box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 50px 100px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.07);
+      position:relative;overflow:hidden;
+    }
+    .card::before{
+      content:'';position:absolute;top:-1px;left:12%;right:12%;height:2px;
+      border-radius:999px;
+      background:linear-gradient(90deg,transparent,#00ff88,#00ddff,#8844ff,transparent);
+      opacity:0.9;
+    }
+    .card::after{
+      content:'';position:absolute;top:0;left:0;right:0;height:45%;
+      border-radius:28px 28px 0 0;
+      background:linear-gradient(180deg,rgba(255,255,255,0.04) 0%,transparent 100%);
+      pointer-events:none;
+    }
+
+    .logo-wrap{text-align:center;margin-bottom:22px;}
+    .logo-spikes{
+      width:40px;margin:0 auto 10px;
+      display:flex;justify-content:center;align-items:flex-end;gap:3px;
+    }
+    .logo-spikes .lsp{background:rgba(255,255,255,0.9);border-radius:2px 2px 0 0;}
+    .lsp:nth-child(1){width:6px;height:11px}
+    .lsp:nth-child(2){width:6px;height:20px}
+    .lsp:nth-child(3){width:6px;height:8px}
+    .lsp:nth-child(4){width:6px;height:20px}
+    .lsp:nth-child(5){width:6px;height:11px}
+    .logo-name{font-size:1.9rem;font-weight:700;letter-spacing:-0.5px;color:#fff;}
+    .logo-sub{font-size:0.6rem;letter-spacing:4px;color:rgba(255,255,255,0.3);text-transform:uppercase;margin-top:4px;}
+
+    .lang-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
+    .lang-wrap{
+      display:flex;align-items:center;gap:5px;
+      background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+      border-radius:8px;padding:5px 10px;cursor:pointer;transition:background 0.2s;
+    }
+    .lang-wrap:hover{background:rgba(255,255,255,0.08);}
+    .lang-select{
+      background:transparent;border:none;color:rgba(255,255,255,0.55);
+      font-family:'Inter',sans-serif;font-size:0.72rem;cursor:pointer;outline:none;
+    }
+    .lang-select option{background:#111;color:#fff;}
+
+    .input-label{display:block;font-size:0.68rem;color:rgba(255,255,255,0.35);margin-bottom:6px;}
+    .input-row{
+      display:flex;align-items:center;
+      background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.09);
+      border-radius:14px;padding:4px 4px 4px 16px;
+      transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    .input-row:focus-within{
+      border-color:rgba(0,220,130,0.5);
+      box-shadow:0 0 0 3px rgba(0,220,130,0.08);
+    }
+    .url-input{
+      flex:1;background:transparent;border:none;color:#fff;
+      font-family:'Inter',sans-serif;font-size:0.88rem;
+      outline:none;padding:10px 0;caret-color:#00e5a0;
+    }
+    .url-input::placeholder{color:rgba(255,255,255,0.18);}
+    .submit-btn{
+      width:40px;height:40px;border-radius:10px;
+      background:linear-gradient(135deg,#00e0a0,#00ccff);
+      border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      box-shadow:0 4px 14px rgba(0,200,150,0.35);
+      transition:opacity 0.2s,transform 0.1s;
+    }
+    .submit-btn:hover{opacity:0.85;}
+    .submit-btn:active{transform:scale(0.92);}
+    .submit-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+
+    .divider{
+      display:flex;align-items:center;gap:12px;
+      margin:18px 0;color:rgba(255,255,255,0.18);font-size:0.7rem;letter-spacing:2px;
+    }
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.07);}
+
+    .scan-btn{
+      width:100%;background:rgba(255,255,255,0.042);
+      border:1px solid rgba(255,255,255,0.08);border-radius:14px;
+      padding:15px 18px;display:flex;align-items:center;justify-content:space-between;
+      cursor:pointer;color:rgba(255,255,255,0.72);
+      font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;
+      transition:background 0.18s,border-color 0.18s;margin-bottom:10px;
+    }
+    .scan-btn:hover{background:rgba(255,255,255,0.075);border-color:rgba(255,255,255,0.13);}
+    .scan-btn:last-of-type{margin-bottom:0;}
+    .scan-btn-left{display:flex;align-items:center;gap:13px;}
+    .scan-arrow{color:rgba(255,255,255,0.28);font-size:1rem;}
+
+    .learn-row{text-align:center;margin-top:18px;font-size:0.8rem;color:rgba(255,255,255,0.28);}
+    .learn-row a{color:#00e5a0;text-decoration:none;font-weight:600;}
+
+    .loading-overlay{
+      display:none;position:absolute;inset:0;
+      background:rgba(8,8,8,0.95);border-radius:28px;z-index:10;
+      flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    }
+    .loading-overlay.active{display:flex;}
+    .spinner{
+      width:36px;height:36px;
+      border:2px solid rgba(0,229,160,0.1);
+      border-top-color:#00e5a0;border-radius:50%;
+      animation:spin 0.7s linear infinite;
+    }
+    .loading-text{font-size:0.7rem;color:rgba(0,229,160,0.5);letter-spacing:2px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="bg-wrap">
+  <div class="bg-image" id="bgImage"></div>
+  <div class="bg-overlay" id="bgOverlay"></div>
+</div>
+
+<!-- ══ INTRO ANIMATION ══ -->
+<div id="intro">
+  <div class="intro-ring"></div>
+  <div class="intro-ring"></div>
+  <div class="intro-ring"></div>
+  <div class="scan-line"></div>
+  <div class="intro-content">
+    <div class="intro-spikes">
+      <div class="sp"></div><div class="sp"></div><div class="sp"></div>
+      <div class="sp"></div><div class="sp"></div>
+    </div>
+    <div class="intro-title">SafeLinks</div>
+    <div class="intro-sub">URL Phishing Detector</div>
+    <div class="intro-progress-wrap">
+      <div class="intro-progress"></div>
+    </div>
+    <div class="intro-status" id="statusText">INITIALIZING SECURITY ENGINE...</div>
+  </div>
+</div>
+
+<!-- ══ MAIN PAGE ══ -->
+<div id="mainPage">
+  <div class="card">
+    <div class="loading-overlay" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text" data-i18n="scanning">SCANNING URL...</div>
+    </div>
+
+    <div class="logo-wrap">
+      <div class="logo-spikes">
+        <div class="lsp"></div><div class="lsp"></div><div class="lsp"></div>
+        <div class="lsp"></div><div class="lsp"></div>
+      </div>
+      <div class="logo-name">SafeLinks</div>
+      <div class="logo-sub" data-i18n="subtitle">URL Phishing Detector</div>
+    </div>
+
+    <div class="lang-row">
+      <div class="lang-wrap">
+        <span style="font-size:0.8rem">🌐</span>
+        <select class="lang-select" id="langSelect" onchange="setLanguage(this.value)">
+          <option value="en">English (Global)</option>
+          <option value="ml">മലയാളം</option>
+          <option value="hi">हिन्दी</option>
+          <option value="ta">தமிழ்</option>
+          <option value="te">తెలుగు</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="ar">العربية</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="zh">中文</option>
+          <option value="ja">日本語</option>
+          <option value="ru">Русский</option>
+          <option value="pt">Português</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-label" data-i18n="urlLabel">URL</div>
+    <div class="input-row">
+      <input type="text" class="url-input" id="urlInput"
+        data-i18n-placeholder="placeholder"
+        placeholder="paste the url here..."
+        autocomplete="off" spellcheck="false"/>
+      <button class="submit-btn" onclick="checkUrl('full')">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <div class="divider" data-i18n="or">OR</div>
+
+    <button class="scan-btn" onclick="checkUrl('full')">
+      <div class="scan-btn-left"><span>🛡</span><span data-i18n="fullScan">Initialize Full Scan</span></div>
+      <span class="scan-arrow">→</span>
+    </button>
+    <button class="scan-btn" onclick="checkUrl('quick')">
+      <div class="scan-btn-left"><span>⚡</span><span data-i18n="quickScan">Quick Heuristic Scan</span></div>
+      <span class="scan-arrow">→</span>
+    </button>
+
+    <div class="learn-row">
+  <a href="/history" style="color:rgba(255,255,255,0.3);text-decoration:none;font-size:0.78rem;">📋 Scan History</a>
+  <span style="color:rgba(255,255,255,0.1);margin:0 8px">·</span>
+  <a href="#" style="color:#00e5a0;text-decoration:none;font-size:0.78rem;font-weight:600;">Learn more</a>
+</div>
+  </div>
+</div>
+
+<script>
+// ══ INTRO ANIMATION LOGIC ══
+var statusMessages = [
+  'INITIALIZING SECURITY ENGINE...',
+  'LOADING THREAT DATABASE...',
+  'CALIBRATING HEURISTICS...',
+  'READY ✓'
+];
+var msgIndex = 0;
+var statusEl = document.getElementById('statusText');
+var msgTimer = setInterval(function(){
+  msgIndex++;
+  if(msgIndex < statusMessages.length){
+    statusEl.textContent = statusMessages[msgIndex];
+  } else {
+    clearInterval(msgTimer);
+  }
+}, 750);
+
+// Floating particles
+for(var i=0;i<18;i++){
+  (function(){
+    var p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random()*100+'vw';
+    p.style.setProperty('--dx',(Math.random()-0.5)*120+'px');
+    var dur = 5+Math.random()*7;
+    p.style.animation = 'particleFloat '+dur+'s linear infinite';
+    p.style.animationDelay = Math.random()*dur+'s';
+    document.getElementById('intro').appendChild(p);
+  })();
+}
+
+// Transition to main page after 3.4s
+setTimeout(function(){
+  document.getElementById('intro').classList.add('hide');
+  document.getElementById('bgImage').classList.add('show');
+  document.getElementById('bgOverlay').classList.add('show');
+  setTimeout(function(){
+    document.getElementById('mainPage').classList.add('show');
+  }, 400);
+}, 3400);
+
+// ══ TRANSLATIONS ══
+var i18n = {
+  en:{subtitle:'URL Phishing Detector',urlLabel:'URL',placeholder:'paste the url here...',or:'OR',fullScan:'Initialize Full Scan',quickScan:'Quick Heuristic Scan',newTo:'New to SafeLinks?',learnMore:'Learn more',scanning:'SCANNING URL...',errorEmpty:'Please enter a URL first.',errorFail:'Scan failed. Please try again.'},
+  ml:{subtitle:'URL ഫിഷിംഗ് ഡിറ്റക്ടർ',urlLabel:'URL',placeholder:'URL ഇവിടെ ഒട്ടിക്കുക...',or:'അല്ലെങ്കിൽ',fullScan:'പൂർണ്ണ സ്കാൻ ആരംഭിക്കുക',quickScan:'ദ്രുത ഹ്യൂറിസ്റ്റിക് സ്കാൻ',newTo:'SafeLinks പുതുതാണോ?',learnMore:'കൂടുതൽ അറിയുക',scanning:'URL സ്കാൻ ചെയ്യുന്നു...',errorEmpty:'ആദ്യം URL നൽകുക.',errorFail:'സ്കാൻ പരാജയപ്പെട്ടു.'},
+  hi:{subtitle:'URL फ़िशिंग डिटेक्टर',urlLabel:'URL',placeholder:'यहाँ URL पेस्ट करें...',or:'या',fullScan:'पूर्ण स्कैन शुरू करें',quickScan:'त्वरित स्कैन',newTo:'SafeLinks में नए हैं?',learnMore:'और जानें',scanning:'स्कैन हो रहा है...',errorEmpty:'पहले URL दर्ज करें।',errorFail:'स्कैन विफल।'},
+  ta:{subtitle:'URL ஃபிஷிங் டிடெக்டர்',urlLabel:'URL',placeholder:'இங்கே URL ஒட்டவும்...',or:'அல்லது',fullScan:'முழு ஸ்கேன்',quickScan:'விரைவு ஸ்கேன்',newTo:'SafeLinks புதியதா?',learnMore:'மேலும் அறிக',scanning:'ஸ்கேன் செய்கிறது...',errorEmpty:'URL உள்ளிடவும்.',errorFail:'ஸ்கேன் தோல்வி.'},
+  te:{subtitle:'URL ఫిషింగ్ డిటెక్టర్',urlLabel:'URL',placeholder:'ఇక్కడ URL పేస్ట్ చేయండి...',or:'లేదా',fullScan:'పూర్తి స్కాన్',quickScan:'శీఘ్ర స్కాన్',newTo:'SafeLinks కొత్తా?',learnMore:'మరింత తెలుసుకోండి',scanning:'స్కాన్ అవుతోంది...',errorEmpty:'URL నమోదు చేయండి.',errorFail:'స్కాన్ విఫలమైంది.'},
+  kn:{subtitle:'URL ಫಿಶಿಂಗ್ ಡಿಟೆಕ್ಟರ್',urlLabel:'URL',placeholder:'ಇಲ್ಲಿ URL ಅಂಟಿಸಿ...',or:'ಅಥವಾ',fullScan:'ಪೂರ್ಣ ಸ್ಕ್ಯಾನ್',quickScan:'ತ್ವರಿತ ಸ್ಕ್ಯಾನ್',newTo:'SafeLinks ಹೊಸದೇ?',learnMore:'ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ',scanning:'ಸ್ಕ್ಯಾನ್ ಆಗುತ್ತಿದೆ...',errorEmpty:'URL ನಮೂದಿಸಿ.',errorFail:'ಸ್ಕ್ಯಾನ್ ವಿಫಲ.'},
+  ar:{subtitle:'كاشف التصيد في URL',urlLabel:'الرابط',placeholder:'الصق الرابط هنا...',or:'أو',fullScan:'بدء الفحص الكامل',quickScan:'فحص سريع',newTo:'جديد على SafeLinks؟',learnMore:'تعلم المزيد',scanning:'جارٍ الفحص...',errorEmpty:'أدخل رابطاً أولاً.',errorFail:'فشل الفحص.'},
+  fr:{subtitle:'Détecteur de phishing URL',urlLabel:'URL',placeholder:'collez l\'url ici...',or:'OU',fullScan:'Scan complet',quickScan:'Scan rapide',newTo:'Nouveau sur SafeLinks ?',learnMore:'En savoir plus',scanning:'SCAN EN COURS...',errorEmpty:'Entrez une URL.',errorFail:'Scan échoué.'},
+  de:{subtitle:'URL Phishing Detektor',urlLabel:'URL',placeholder:'URL hier einfügen...',or:'ODER',fullScan:'Vollständigen Scan starten',quickScan:'Schneller Scan',newTo:'Neu bei SafeLinks?',learnMore:'Mehr erfahren',scanning:'WIRD GESCANNT...',errorEmpty:'URL eingeben.',errorFail:'Scan fehlgeschlagen.'},
+  es:{subtitle:'Detector de phishing de URL',urlLabel:'URL',placeholder:'pega la url aquí...',or:'O',fullScan:'Escaneo completo',quickScan:'Escaneo rápido',newTo:'¿Nuevo en SafeLinks?',learnMore:'Más información',scanning:'ESCANEANDO...',errorEmpty:'Ingresa una URL.',errorFail:'Escaneo fallido.'},
+  zh:{subtitle:'URL钓鱼检测器',urlLabel:'网址',placeholder:'在此粘贴网址...',or:'或',fullScan:'完整扫描',quickScan:'快速扫描',newTo:'新用户？',learnMore:'了解更多',scanning:'扫描中...',errorEmpty:'请输入网址。',errorFail:'扫描失败。'},
+  ja:{subtitle:'URLフィッシング検出器',urlLabel:'URL',placeholder:'ここにURLを貼り付け...',or:'または',fullScan:'フルスキャン',quickScan:'クイックスキャン',newTo:'初めてですか？',learnMore:'詳細を見る',scanning:'スキャン中...',errorEmpty:'URLを入力してください。',errorFail:'スキャン失敗。'},
+  ru:{subtitle:'URL Детектор фишинга',urlLabel:'URL',placeholder:'вставьте url сюда...',or:'ИЛИ',fullScan:'Полное сканирование',quickScan:'Быстрое сканирование',newTo:'Новичок?',learnMore:'Узнать больше',scanning:'СКАНИРОВАНИЕ...',errorEmpty:'Введите URL.',errorFail:'Сбой сканирования.'},
+  pt:{subtitle:'Detector de phishing de URL',urlLabel:'URL',placeholder:'cole a url aqui...',or:'OU',fullScan:'Verificação completa',quickScan:'Verificação rápida',newTo:'Novo no SafeLinks?',learnMore:'Saber mais',scanning:'VERIFICANDO...',errorEmpty:'Insira uma URL.',errorFail:'Falha na verificação.'}
+};
+
+var currentLang = 'en';
+
+function setLanguage(lang){
+  currentLang = lang;
+  var t = i18n[lang] || i18n['en'];
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k = el.getAttribute('data-i18n');
+    if(t[k]) el.textContent = t[k];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+    var k = el.getAttribute('data-i18n-placeholder');
+    if(t[k]) el.placeholder = t[k];
+  });
+  localStorage.setItem('sl_lang',lang);
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  var saved = localStorage.getItem('sl_lang');
+  var browserLang = navigator.language.split('-')[0];
+  var useLang = saved || (i18n[browserLang] ? browserLang : 'en');
+  document.getElementById('langSelect').value = useLang;
+  setLanguage(useLang);
+  document.getElementById('urlInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter') checkUrl('full');
+  });
+});
+
+async function checkUrl(mode){
+  var url = document.getElementById('urlInput').value.trim();
+  var t = i18n[currentLang] || i18n['en'];
+  if(!url){ alert(t.errorEmpty); return; }
+  document.getElementById('loading').classList.add('active');
+  var endpoint = mode==='quick' ? '/api/quick' : '/api/check';
+  try{
+    var res = await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url:url})
+    });
+    var data = await res.json();
+    if(data.error) throw new Error(data.error);
+    sessionStorage.setItem('sl_result',JSON.stringify(data));
+    sessionStorage.setItem('sl_lang',currentLang);
+    if(mode==='quick'){
+      window.location.href='/result';
+    } else {
+      window.location.href = data.verdict==='SAFE' ? '/result' : '/warning';
+    }
+  } catch(e){
+    document.getElementById('loading').classList.remove('active');
+    alert((i18n[currentLang]||i18n['en']).errorFail+'\n'+e.message);
+  }
+}
+</script>
+</body>
+</html>

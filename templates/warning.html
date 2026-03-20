@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SafeLinks – DANGER</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#050505;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow-x:hidden}
+    .bg-wrap{position:fixed;inset:0;z-index:0}
+    .bg-image{position:absolute;inset:-40px;background-image:url('/static/batman.jpg');background-size:cover;background-position:center;filter:blur(28px) brightness(0.15) saturate(0.5);transform:scale(1.1)}
+    .bg-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 90% 90% at 50% 50%,rgba(80,0,0,0.3) 0%,rgba(0,0,0,0.85) 100%)}
+    .scan-line{position:fixed;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,40,40,0.4),transparent);animation:scan 3s linear infinite;z-index:1;pointer-events:none}
+    @keyframes scan{from{top:0}to{top:100vh}}
+    .page{position:relative;z-index:2;width:100%;max-width:560px;margin:30px 20px}
+    .back-btn{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,0.3);font-size:0.78rem;text-decoration:none;margin-bottom:16px;transition:color 0.2s}
+    .back-btn:hover{color:#00e5a0}
+    .card{background:rgba(12,5,5,0.78);border:1px solid rgba(255,40,40,0.15);border-radius:28px;padding:32px 28px;backdrop-filter:blur(80px) saturate(180%);-webkit-backdrop-filter:blur(80px) saturate(180%);box-shadow:0 0 60px rgba(255,0,0,0.08),0 50px 100px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.05);animation:fadeUp 0.5s ease;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:-1px;left:12%;right:12%;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,#ff3333,#ff6600,transparent);animation:pb 2s ease-in-out infinite}
+    @keyframes pb{0%,100%{opacity:0.6}50%{opacity:1}}
+    .danger-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+    .danger-icon{width:60px;height:60px;border-radius:16px;background:rgba(255,40,40,0.1);border:1px solid rgba(255,40,40,0.3);display:flex;align-items:center;justify-content:center;font-size:1.9rem;flex-shrink:0;animation:pi 2s ease-in-out infinite}
+    @keyframes pi{0%,100%{box-shadow:0 0 0 rgba(255,40,40,0.2)}50%{box-shadow:0 0 24px rgba(255,40,40,0.3)}}
+    .danger-title{font-size:1.8rem;font-weight:700;color:#ff3333;letter-spacing:-0.5px}
+    .danger-sub{font-size:0.78rem;color:rgba(255,150,150,0.5);margin-top:3px}
+    .url-box{background:rgba(255,40,40,0.05);border:1px solid rgba(255,40,40,0.12);border-radius:12px;padding:12px 14px;font-size:0.75rem;color:rgba(255,150,150,0.5);word-break:break-all;margin-bottom:20px;font-family:monospace}
+    .desc-box{background:rgba(255,30,30,0.04);border:1px solid rgba(255,40,40,0.1);border-radius:16px;padding:18px;margin-bottom:20px}
+    .desc-header{display:flex;align-items:center;gap:8px;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,150,150,0.4);margin-bottom:12px}
+    .desc-text{font-size:0.88rem;line-height:1.7;color:rgba(255,200,200,0.75)}
+    .score-section{margin-bottom:20px}
+    .score-top{display:flex;justify-content:space-between;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,150,150,0.3);margin-bottom:8px}
+    .score-val{font-weight:700;color:#ff3333}
+    .score-track{height:6px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden}
+    .score-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#ff6600,#ff3333);transition:width 1.2s cubic-bezier(0.4,0,0.2,1);min-width:4px}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .meta-item{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:12px 14px}
+    .meta-key{font-size:0.65rem;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,150,150,0.25);margin-bottom:4px}
+    .meta-val{font-size:0.88rem;font-weight:600;color:rgba(255,200,200,0.7)}
+    .meta-val.bad{color:#ff4444}
+    .flags-section{margin-bottom:22px}
+    .flags-title{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,150,150,0.3);margin-bottom:12px}
+    .flag-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,40,40,0.07);font-size:0.83rem;color:rgba(255,200,200,0.6)}
+    .flag-item:last-child{border-bottom:none}
+    .flag-dot{color:#ff3333;font-size:0.5rem;margin-top:6px;flex-shrink:0}
+    .btn-row{display:flex;flex-direction:column;gap:10px}
+    .action-btn{width:100%;padding:14px;border-radius:14px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:600;transition:all 0.2s}
+    .btn-safe{background:linear-gradient(135deg,#00e0a0,#00b8d9);color:#000;box-shadow:0 4px 14px rgba(0,200,150,0.3)}
+    .btn-safe:hover{opacity:0.9}
+    .btn-danger{background:rgba(255,40,40,0.06);border:1px solid rgba(255,40,40,0.2)!important;color:rgba(255,100,100,0.5);font-size:0.78rem}
+    .btn-danger:hover{border-color:rgba(255,40,40,0.4)!important;color:rgba(255,100,100,0.8)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+<div class="bg-wrap"><div class="bg-image"></div><div class="bg-overlay"></div></div>
+<div class="scan-line"></div>
+<div class="page">
+  <a class="back-btn" href="/">← Back to SafeLinks</a>
+  <div id="WC"></div>
+</div>
+<script>
+var raw = sessionStorage.getItem('sl_result');
+if (!raw) { window.location.href = '/'; }
+var data = JSON.parse(raw);
+var lang = sessionStorage.getItem('sl_lang') || 'en';
+
+var T = {
+  en:  {danger:'DANGEROUS',ai:'AI THREAT ANALYSIS',ts:'THREAT SCORE',sev:'SEVERITY',ht:'HTTPS',ind:'INDICATORS',st:'SCAN TYPE',ti:'THREAT INDICATORS',gb:'← Go Back to Safety',proc:'I understand the risk — proceed anyway',low:'Low',med:'High',crit:'Critical',fs:'Full Scan',qs:'Quick Scan',found:'Found',none:'✗ None',yes:'Yes'},
+  ml:  {danger:'അപകടകരം',ai:'AI ഭീഷണി വിശകലനം',ts:'ഭീഷണി സ്കോർ',sev:'തീവ്രത',ht:'HTTPS',ind:'സൂചകങ്ങൾ',st:'സ്കാൻ തരം',ti:'ഭീഷണി സൂചകങ്ങൾ',gb:'← സുരക്ഷിതതയിലേക്ക് മടങ്ങുക',proc:'അപകടം മനസ്സിലാക്കി — തുടരുക',low:'കുറഞ്ഞ',med:'ഉയർന്ന',crit:'ഗുരുതരം',fs:'പൂർണ്ണ സ്കാൻ',qs:'ദ്രുത സ്കാൻ',found:'കണ്ടെത്തി',none:'✗ ഇല്ല',yes:'ഉണ്ട്'},
+  hi:  {danger:'खतरनाक',ai:'AI खतरा विश्लेषण',ts:'खतरा स्कोर',sev:'गंभीरता',ht:'HTTPS',ind:'संकेतक',st:'स्कैन प्रकार',ti:'खतरे के संकेतक',gb:'← सुरक्षा में वापस',proc:'जोखिम समझकर आगे बढ़ें',low:'कम',med:'उच्च',crit:'गंभीर',fs:'पूर्ण स्कैन',qs:'त्वरित स्कैन',found:'मिले',none:'✗ नहीं',yes:'हाँ'},
+  ta:  {danger:'ஆபத்தானது',ai:'AI அச்சுறுத்தல் பகுப்பாய்வு',ts:'அச்சுறுத்தல் மதிப்பெண்',sev:'தீவிரம்',ht:'HTTPS',ind:'குறிகாட்டிகள்',st:'ஸ்கேன் வகை',ti:'அச்சுறுத்தல் குறிகாட்டிகள்',gb:'← பாதுகாப்பிற்கு திரும்பு',proc:'அபாயம் புரிந்து தொடர',low:'குறைவு',med:'அதிகம்',crit:'கடுமையான',fs:'முழு ஸ்கேன்',qs:'விரைவு ஸ்கேன்',found:'கண்டறியப்பட்டது',none:'✗ இல்லை',yes:'உள்ளது'},
+  te:  {danger:'ప్రమాదకరం',ai:'AI బెదిరింపు విశ్లేషణ',ts:'బెదిరింపు స్కోర్',sev:'తీవ్రత',ht:'HTTPS',ind:'సూచికలు',st:'స్కాన్ రకం',ti:'బెదిరింపు సూచికలు',gb:'← సురక్షితానికి వెళ్ళు',proc:'అపాయం అర్థమైంది — కొనసాగించు',low:'తక్కువ',med:'అధికం',crit:'తీవ్రమైన',fs:'పూర్తి స్కాన్',qs:'శీఘ్ర స్కాన్',found:'కనుగొనబడ్డాయి',none:'✗ లేదు',yes:'ఉంది'},
+  kn:  {danger:'ಅಪಾಯಕಾರಿ',ai:'AI ಬೆದರಿಕೆ ವಿಶ್ಲೇಷಣೆ',ts:'ಬೆದರಿಕೆ ಸ್ಕೋರ್',sev:'ತೀವ್ರತೆ',ht:'HTTPS',ind:'ಸೂಚಕಗಳು',st:'ಸ್ಕ್ಯಾನ್ ಪ್ರಕಾರ',ti:'ಬೆದರಿಕೆ ಸೂಚಕಗಳು',gb:'← ಸುರಕ್ಷಿತಕ್ಕೆ ಹಿಂತಿರುಗಿ',proc:'ಅಪಾಯ ಅರ್ಥವಾಯಿತು — ಮುಂದುವರಿಯಿರಿ',low:'ಕಡಿಮೆ',med:'ಹೆಚ್ಚು',crit:'ತೀವ್ರ',fs:'ಪೂರ್ಣ ಸ್ಕ್ಯಾನ್',qs:'ತ್ವರಿತ ಸ್ಕ್ಯಾನ್',found:'ಕಂಡುಬಂದಿದೆ',none:'✗ ಇಲ್ಲ',yes:'ಇದೆ'},
+  ar:  {danger:'خطير',ai:'تحليل التهديد بالذكاء الاصطناعي',ts:'درجة التهديد',sev:'الخطورة',ht:'HTTPS',ind:'المؤشرات',st:'نوع الفحص',ti:'مؤشرات التهديد',gb:'← العودة للأمان',proc:'أفهم الخطر — المتابعة',low:'منخفض',med:'عالٍ',crit:'حرج',fs:'فحص كامل',qs:'فحص سريع',found:'وُجد',none:'✗ لا يوجد',yes:'نعم'},
+  fr:  {danger:'DANGEREUX',ai:'ANALYSE DE MENACE IA',ts:'Score de menace',sev:'Sévérité',ht:'HTTPS',ind:'Indicateurs',st:'Type de scan',ti:'Indicateurs de menace',gb:'← Retourner en sécurité',proc:'Je comprends le risque — continuer',low:'Faible',med:'Élevé',crit:'Critique',fs:'Scan complet',qs:'Scan rapide',found:'Trouvés',none:'✗ Aucun',yes:'Oui'},
+  de:  {danger:'GEFÄHRLICH',ai:'KI-BEDROHUNGSANALYSE',ts:'Bedrohungsscore',sev:'Schweregrad',ht:'HTTPS',ind:'Indikatoren',st:'Scantyp',ti:'Bedrohungsindikatoren',gb:'← Zurück zur Sicherheit',proc:'Risiko verstanden — weiter',low:'Niedrig',med:'Hoch',crit:'Kritisch',fs:'Vollständiger Scan',qs:'Schneller Scan',found:'Gefunden',none:'✗ Keines',yes:'Ja'},
+  es:  {danger:'PELIGROSO',ai:'ANÁLISIS DE AMENAZA IA',ts:'Puntuación de amenaza',sev:'Severidad',ht:'HTTPS',ind:'Indicadores',st:'Tipo de escaneo',ti:'Indicadores de amenaza',gb:'← Volver a la seguridad',proc:'Entiendo el riesgo — continuar',low:'Bajo',med:'Alto',crit:'Crítico',fs:'Escaneo completo',qs:'Escaneo rápido',found:'Encontrados',none:'✗ Ninguno',yes:'Sí'},
+  zh:  {danger:'危险',ai:'AI威胁分析',ts:'威胁评分',sev:'严重程度',ht:'HTTPS',ind:'指标',st:'扫描类型',ti:'威胁指标',gb:'← 返回安全页面',proc:'我了解风险 — 继续',low:'低',med:'高',crit:'严重',fs:'完整扫描',qs:'快速扫描',found:'发现',none:'✗ 无',yes:'有'},
+  ja:  {danger:'危険',ai:'AI脅威分析',ts:'脅威スコア',sev:'深刻度',ht:'HTTPS',ind:'指標',st:'スキャン',ti:'脅威指標',gb:'← 安全に戻る',proc:'リスクを理解して続行',low:'低',med:'高',crit:'重大',fs:'フルスキャン',qs:'クイック',found:'検出',none:'✗ なし',yes:'あり'},
+  ru:  {danger:'ОПАСНО',ai:'АНАЛИЗ УГРОЗ ИИ',ts:'Оценка угрозы',sev:'Серьёзность',ht:'HTTPS',ind:'Индикаторы',st:'Тип сканирования',ti:'Индикаторы угроз',gb:'← Вернуться к безопасности',proc:'Понимаю риск — продолжить',low:'Низкий',med:'Высокий',crit:'Критический',fs:'Полное сканирование',qs:'Быстрое сканирование',found:'Найдено',none:'✗ Нет',yes:'Да'},
+  pt:  {danger:'PERIGOSO',ai:'ANÁLISE DE AMEAÇA IA',ts:'Pontuação de ameaça',sev:'Severidade',ht:'HTTPS',ind:'Indicadores',st:'Tipo de verificação',ti:'Indicadores de ameaça',gb:'← Voltar para segurança',proc:'Entendo o risco — continuar',low:'Baixo',med:'Alto',crit:'Crítico',fs:'Verificação completa',qs:'Verificação rápida',found:'Encontrados',none:'✗ Nenhum',yes:'Sim'}
+};
+
+var L = T[lang] || T['en'];
+var flags = data.flags || [];
+var score = data.score;
+var domain = data.domain;
+var severity = score < 60 ? L.low : score < 80 ? L.med : L.crit;
+var sevColor = score < 60 ? '#ffaa00' : score < 80 ? '#ff6600' : '#ff3333';
+var scan = data.scan_mode === 'quick' ? ('⚡ ' + L.qs) : ('🛡 ' + L.fs);
+
+var flagsHtml = flags.length
+  ? flags.map(function(f){ return '<div class="flag-item"><span class="flag-dot">◆</span><span>'+f+'</span></div>'; }).join('')
+  : '<p style="color:rgba(255,150,150,0.3);font-size:0.83rem;padding:8px 0">Automatic threat pattern detected.</p>';
+
+document.getElementById('WC').innerHTML =
+  '<div class="card">' +
+  '<div class="danger-header">' +
+    '<div class="danger-icon">☠️</div>' +
+    '<div><div class="danger-title">'+L.danger+'</div>' +
+    '<div class="danger-sub">'+domain+'</div></div></div>' +
+  '<div class="url-box">'+data.url+'</div>' +
+  '<div class="desc-box">' +
+    '<div class="desc-header"><span>🤖</span> '+L.ai+'</div>' +
+    '<div id="DESC"><p class="desc-text" style="color:rgba(255,150,150,0.3)">...</p></div>' +
+  '</div>' +
+  '<div class="score-section">' +
+    '<div class="score-top"><span>'+L.ts+'</span><span class="score-val">'+score+'/100</span></div>' +
+    '<div class="score-track"><div class="score-fill" id="SB" style="width:0%"></div></div>' +
+  '</div>' +
+  '<div class="meta-grid">' +
+    '<div class="meta-item"><div class="meta-key">'+L.sev+'</div><div class="meta-val" style="color:'+sevColor+'">'+severity+'</div></div>' +
+    '<div class="meta-item"><div class="meta-key">'+L.ht+'</div><div class="meta-val '+(data.https?'':'bad')+'">'+(data.https?L.yes:L.none)+'</div></div>' +
+    '<div class="meta-item"><div class="meta-key">'+L.ind+'</div><div class="meta-val bad">'+flags.length+' '+L.found+'</div></div>' +
+    '<div class="meta-item"><div class="meta-key">'+L.st+'</div><div class="meta-val">'+scan+'</div></div>' +
+  '</div>' +
+  '<div class="flags-section"><div class="flags-title">'+L.ti+' ('+flags.length+')</div>'+flagsHtml+'</div>' +
+  '<div class="btn-row">' +
+    '<button class="action-btn btn-safe" onclick="window.location.href=\'/\'">'+L.gb+'</button>' +
+    '<button class="action-btn btn-danger" onclick="if(confirm(\'This URL is dangerous! Proceed anyway?\'))window.open(\''+data.url+'\',\'_blank\')">'+L.proc+'</button>' +
+  '</div></div>';
+
+setTimeout(function(){
+  var b = document.getElementById('SB');
+  if(b) b.style.width = score + '%';
+}, 200);
+
+// AI Descriptions in multiple languages
+var descs = {
+  en: {
+    ip: '🚨 <strong>CRITICAL — IP ADDRESS ATTACK DETECTED</strong><br><br>The URL uses a raw IP address (<strong>'+domain+'</strong>) instead of a proper registered domain name. This is one of the most serious red flags in cybersecurity.<br><br>Legitimate websites — banks, social media, shopping platforms — always use proper domain names. Cybercriminals use IP addresses to host phishing pages on compromised servers, capturing your login credentials and banking details without you knowing.<br><br>The server behind this IP could be located anywhere in the world and may already be flagged by law enforcement.<br><br>Threat Score: <strong>'+score+'/100</strong> — <strong>Do NOT visit this URL under any circumstances.</strong>',
+
+    br: '🚨 <strong>PHISHING ALERT — BRAND IMPERSONATION DETECTED</strong><br><br>This URL (<strong>'+domain+'</strong>) is impersonating a well-known, trusted brand or service to steal your login credentials, passwords, and financial information.<br><br>Attackers create pixel-perfect copies of official websites — matching logos, color schemes, login forms — to trick you into believing you are on the real site. Once you enter your credentials, they are immediately sent to the attacker\'s server.<br><br>With <strong>'+flags.length+' threat indicators</strong> and a score of <strong>'+score+'/100</strong>, this URL matches an active phishing campaign.<br><br><strong>If you have already entered any credentials, immediately change your password and enable two-factor authentication.</strong>',
+
+    sh: '⚠️ <strong>WARNING — URL SHORTENER CONCEALING REAL DESTINATION</strong><br><br>This link uses a URL shortening service to completely hide its true destination. Phishing attackers heavily abuse URL shorteners because they mask where you will actually be redirected — bypassing security filters.<br><br>The actual destination could be a credential harvesting page, a malware download portal, or a scam website designed to steal payment information.<br><br>Threat Score: <strong>'+score+'/100</strong><br><br><strong>Never click shortened links from unknown senders. Use a URL expander tool to reveal the real destination first.</strong>',
+
+    nd: '⚠️ <strong>WARNING — NEWLY REGISTERED PHISHING DOMAIN</strong><br><br>The domain <strong>'+domain+'</strong> was registered very recently — just <strong>'+(data.domain_age_days||'a few')+' days ago</strong>. This is a critical warning sign.<br><br>Cybercriminals follow a documented pattern: register a new domain, set up a fake website, harvest credentials, then abandon the domain before it gets blacklisted. This cycle typically lasts 7 to 30 days.<br><br>Established legitimate businesses have domains that are months or years old. Combined with <strong>'+flags.length+' other threat indicators</strong> and a score of <strong>'+score+'/100</strong>, this URL strongly matches a freshly launched phishing operation.<br><br><strong>Do not trust websites on newly registered domains asking for login or payment information.</strong>',
+
+    kw: '⚠️ <strong>WARNING — CREDENTIAL HARVESTING ATTEMPT DETECTED</strong><br><br>This URL contains a high concentration of keywords that are hallmarks of phishing pages — specifically words like <em>login, verify, secure, account, confirm, update, password, helpdesk</em>. These are deliberately embedded to create false legitimacy and urgency.<br><br>Phishing attackers design these URLs to appear as official account verification pages or login portals for trusted services like PayPal, Amazon, Google, or your bank. The convincing fake form submits your credentials directly to the attacker.<br><br><strong>'+flags.length+' threat indicators</strong> detected, danger score: <strong>'+score+'/100</strong><br><br><strong>Never enter your username, password, credit card number, or any personal information on this page.</strong>',
+
+    at: '🚨 <strong>CRITICAL — URL REDIRECT TRICK DETECTED (@ SYMBOL)</strong><br><br>This URL contains an <strong>@ symbol</strong> — a known and highly deceptive phishing technique. In URL parsing, everything before the @ symbol is treated as credentials and completely ignored by the browser. The browser only navigates to the domain AFTER the @ symbol.<br><br>Example: <em>https://paypal.com@malicious-site.com</em> takes you to malicious-site.com, NOT PayPal — even though PayPal appears at the start.<br><br><strong>'+flags.length+' threat indicators</strong>, danger score: <strong>'+score+'/100</strong><br><br><strong>This is a sophisticated phishing technique. Do not visit this URL under any circumstances.</strong>',
+
+    gn: '🚨 <strong>MULTIPLE THREAT INDICATORS DETECTED</strong><br><br>Comprehensive analysis of <strong>'+domain+'</strong> identified <strong>'+flags.length+' distinct threat indicators</strong>, resulting in a danger score of <strong>'+score+'/100</strong>.<br><br>'+(data.https?'':'No HTTPS encryption detected — all data would be transmitted without protection.<br><br>')+'The combination of risk factors is consistent with URLs used in phishing campaigns, malware distribution, and social engineering attacks.<br><br><strong>Threat indicators found:</strong><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>We strongly advise against visiting this URL. Never enter passwords, payment details, or personal information.</strong>'
+  },
+
+  ml: {
+    ip: '🚨 <strong>ഗുരുതരം — IP വിലാസ ആക്രമണം കണ്ടെത്തി</strong><br><br>ഈ URL ഒരു IP വിലാസം (<strong>'+domain+'</strong>) ഉപയോഗിക്കുന്നു. ഇത് ഫിഷിംഗ് സൈറ്റുകളുടെ ഏറ്റവും ശക്തമായ സൂചകമാണ്. യഥാർത്ഥ വെബ്സൈറ്റുകൾ ഒരിക്കലും IP വിലാസങ്ങൾ ഉപയോഗിക്കില്ല. സൈബർ കുറ്റവാളികൾ നിങ്ങളുടെ ലോഗിൻ വിവരങ്ങൾ, ബാങ്കിംഗ് വിശദാംശങ്ങൾ മോഷ്ടിക്കാൻ ഈ രീതി ഉപയോഗിക്കുന്നു.<br><br>ഭീഷണി സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>ഈ URL ഒരു കാരണവശാലും സന്ദർശിക്കരുത്.</strong>',
+
+    br: '🚨 <strong>ഫിഷിംഗ് മുന്നറിയിപ്പ് — ബ്രാൻഡ് അനുകരണം</strong><br><br>ഈ URL (<strong>'+domain+'</strong>) ഒരു വിശ്വസ്ത ബ്രാൻഡ് അനുകരിക്കുന്നു — നിങ്ങളുടെ ലോഗിൻ, പാസ്വേഡ്, ബാങ്കിംഗ് വിവരങ്ങൾ മോഷ്ടിക്കാൻ. ആക്രമണകാരികൾ ഒഫീഷ്യൽ സൈറ്റിന്റെ കൃത്യമായ പകർപ്പ് ഉണ്ടാക്കുന്നു.<br><br><strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>ഇതിനകം ക്രെഡൻഷ്യലുകൾ നൽകിയെങ്കിൽ ഉടനടി പാസ്വേഡ് മാറ്റുക.</strong>',
+
+    sh: '⚠️ <strong>മുന്നറിയിപ്പ് — URL ഷോർട്ടനർ</strong><br><br>ഈ ലിങ്ക് യഥാർത്ഥ ലക്ഷ്യം മറയ്ക്കുന്നു. ഭീഷണി സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>അജ്ഞാത ഉറവിടങ്ങളിൽ നിന്ന് ചെറുതാക്കിയ ലിങ്കുകളിൽ ക്ലിക്ക് ചെയ്യരുത്.</strong>',
+
+    nd: '⚠️ <strong>മുന്നറിയിപ്പ് — പുതിയ ഫിഷിംഗ് ഡൊമെയ്ൻ</strong><br><br><strong>'+domain+'</strong> വെറും <strong>'+(data.domain_age_days||'കുറച്ച്')+' ദിവസം</strong> മുമ്പ് രജിസ്റ്റർ ചെയ്തതാണ്. <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>ഈ URL ഒഴിവാക്കുക.</strong>',
+
+    kw: '⚠️ <strong>ക്രെഡൻഷ്യൽ ഹാർവെസ്റ്റിംഗ് ശ്രമം</strong><br><br>login, verify, secure, account, confirm, update, password തുടങ്ങിയ ഫിഷിംഗ് കീവേഡുകൾ കണ്ടെത്തി. <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>ഈ പേജിൽ ഒരിക്കലും വ്യക്തിഗത വിവരങ്ങൾ നൽകരുത്.</strong>',
+
+    at: '🚨 <strong>ഗുരുതരം — @ ചിഹ്ന ആക്രമണം</strong><br><br>@ ചിഹ്നത്തിന് മുമ്പുള്ളതെല്ലാം ബ്രൗസർ അവഗണിക്കുന്നു. <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong><br><br><strong>ഈ URL സന്ദർശിക്കരുത്.</strong>',
+
+    gn: '🚨 <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ കണ്ടെത്തി</strong><br><br>അപകട സ്കോർ: <strong>'+score+'/100</strong><br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>ഈ URL സന്ദർശിക്കരുത്. വ്യക്തിഗത വിവരങ്ങൾ നൽകരുത്.</strong>'
+  },
+
+  hi: {
+    ip: '🚨 <strong>गंभीर — IP पते का हमला</strong><br><br>यह URL IP पते (<strong>'+domain+'</strong>) का उपयोग करता है। वैध वेबसाइटें कभी IP पतों का उपयोग नहीं करतीं। खतरा स्कोर: <strong>'+score+'/100</strong><br><br><strong>इस URL पर न जाएं।</strong>',
+
+    br: '🚨 <strong>फिशिंग चेतावनी — ब्रांड अनुकरण</strong><br><br>यह URL (<strong>'+domain+'</strong>) एक विश्वसनीय ब्रांड की नकल करता है। <strong>'+flags.length+' खतरे के संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong><br><br><strong>यहां कोई भी जानकारी दर्ज न करें।</strong>',
+
+    sh: '⚠️ <strong>URL शॉर्टनर — असली गंतव्य छुपा है</strong><br><br>खतरा स्कोर: <strong>'+score+'/100</strong><br><br><strong>अज्ञात स्रोतों से छोटे लिंक पर क्लिक न करें।</strong>',
+
+    nd: '⚠️ <strong>नया डोमेन — फिशिंग खतरा</strong><br><br><strong>'+domain+'</strong> सिर्फ <strong>'+(data.domain_age_days||'कुछ')+' दिन</strong> पहले पंजीकृत हुआ। स्कोर: <strong>'+score+'/100</strong>',
+
+    kw: '⚠️ <strong>संदिग्ध कीवर्ड मिले</strong><br><br>login, verify, secure, account, confirm जैसे शब्द मिले। <strong>'+flags.length+' संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong><br><br><strong>कोई जानकारी दर्ज न करें।</strong>',
+
+    at: '🚨 <strong>@ प्रतीक हमला</strong><br><br>स्कोर: <strong>'+score+'/100</strong><br><br><strong>इस URL पर न जाएं।</strong>',
+
+    gn: '🚨 <strong>'+flags.length+' खतरे के संकेतक मिले</strong><br><br>स्कोर: <strong>'+score+'/100</strong><br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>इस URL पर न जाएं।</strong>'
+  },
+
+  ta: {
+    ip: '🚨 <strong>தீவிரம் — IP முகவரி தாக்குதல்</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong><br><br><strong>இந்த URL ஐ பார்வையிட வேண்டாம்.</strong>',
+    br: '🚨 <strong>ஃபிஷிங் — பிராண்ட் மோசடி</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong><br><br><strong>தகவல்களை உள்ளிட வேண்டாம்.</strong>',
+    sh: '⚠️ <strong>சுருக்கப்பட்ட URL</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong>',
+    nd: '⚠️ <strong>புதிய டொமைன்</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong>',
+    kw: '⚠️ <strong>சந்தேக வார்த்தைகள்</strong><br><br>'+flags.length+' குறிகாட்டிகள், மதிப்பெண்: <strong>'+score+'/100</strong><br><br><strong>தனிப்பட்ட தகவல்களை உள்ளிட வேண்டாம்.</strong>',
+    at: '🚨 <strong>@ குறியீடு தாக்குதல்</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong>',
+    gn: '🚨 <strong>'+flags.length+' அச்சுறுத்தல்கள்</strong><br><br>மதிப்பெண்: <strong>'+score+'/100</strong><br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>பார்வையிட வேண்டாம்.</strong>'
+  },
+
+  te: {
+    ip: '🚨 <strong>తీవ్రం — IP చిరునామా దాడి</strong><br><br>స్కోర్: <strong>'+score+'/100</strong><br><br><strong>ఈ URL సందర్శించవద్దు.</strong>',
+    br: '🚨 <strong>ఫిషింగ్ — బ్రాండ్ మోసం</strong><br><br>స్కోర్: <strong>'+score+'/100</strong><br><br><strong>సమాచారం నమోదు చేయవద్దు.</strong>',
+    sh: '⚠️ <strong>చిన్న URL</strong><br><br>స్కోర్: <strong>'+score+'/100</strong>',
+    nd: '⚠️ <strong>కొత్త డొమైన్</strong><br><br>స్కోర్: <strong>'+score+'/100</strong>',
+    kw: '⚠️ <strong>అనుమానాస్పద పదాలు</strong><br><br>'+flags.length+' సూచికలు, స్కోర్: <strong>'+score+'/100</strong><br><br><strong>వ్యక్తిగత సమాచారం నమోదు చేయవద్దు.</strong>',
+    at: '🚨 <strong>@ గుర్తు దాడి</strong><br><br>స్కోర్: <strong>'+score+'/100</strong>',
+    gn: '🚨 <strong>'+flags.length+' బెదిరింపు సూచికలు</strong><br><br>స్కోర్: <strong>'+score+'/100</strong><br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>ఈ URL సందర్శించవద్దు.</strong>'
+  },
+
+  kn: {
+    ip: '🚨 <strong>ತೀವ್ರ — IP ವಿಳಾಸ ದಾಳಿ</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong><br><br><strong>ಈ URL ಅನ್ನು ಭೇಟಿ ಮಾಡಬೇಡಿ.</strong>',
+    br: '🚨 <strong>ಫಿಶಿಂಗ್ — ಬ್ರಾಂಡ್ ವಂಚನೆ</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong><br><br><strong>ಮಾಹಿತಿ ನಮೂದಿಸಬೇಡಿ.</strong>',
+    sh: '⚠️ <strong>ಸಂಕ್ಷಿಪ್ತ URL</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong>',
+    nd: '⚠️ <strong>ಹೊಸ ಡೊಮೈನ್</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong>',
+    kw: '⚠️ <strong>ಸಂಶಯಾಸ್ಪದ ಕೀವರ್ಡ್‌ಗಳು</strong><br><br>'+flags.length+' ಸೂಚಕಗಳು, ಸ್ಕೋರ್: <strong>'+score+'/100</strong><br><br><strong>ವೈಯಕ್ತಿಕ ಮಾಹಿತಿ ನಮೂದಿಸಬೇಡಿ.</strong>',
+    at: '🚨 <strong>@ ಚಿಹ್ನೆ ದಾಳಿ</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong>',
+    gn: '🚨 <strong>'+flags.length+' ಬೆದರಿಕೆ ಸೂಚಕಗಳು</strong><br><br>ಸ್ಕೋರ್: <strong>'+score+'/100</strong><br><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>ಈ URL ಭೇಟಿ ಮಾಡಬೇಡಿ.</strong>'
+  }
+};
+
+var D = descs[lang] || descs['en'];
+var hasIP = flags.some(function(f){ return f.toLowerCase().indexOf('ip address') > -1; });
+var hasBrand = flags.some(function(f){ return f.toLowerCase().indexOf('impersonation') > -1 || f.toLowerCase().indexOf('brand') > -1; });
+var isShort = flags.some(function(f){ return f.toLowerCase().indexOf('shortener') > -1; });
+var isNew = flags.some(function(f){ return f.toLowerCase().indexOf('days old') > -1; });
+var hasKw = flags.some(function(f){ return f.toLowerCase().indexOf('keyword') > -1; });
+var hasAt = flags.some(function(f){ return f.toLowerCase().indexOf('@') > -1; });
+
+var txt = '';
+if(hasIP) txt = D.ip;
+else if(hasBrand) txt = D.br;
+else if(isShort) txt = D.sh;
+else if(isNew) txt = D.nd;
+else if(hasKw) txt = D.kw;
+else if(hasAt) txt = D.at;
+else txt = D.gn;
+
+var el = document.getElementById('DESC');
+if(el) el.innerHTML = '<p class="desc-text">'+txt+'</p>';
+</script>
+</body>
+</html>
