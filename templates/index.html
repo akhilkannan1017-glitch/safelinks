@@ -115,8 +115,8 @@
     }
     @keyframes shimmer{to{background-position:300% center}}
 
-    .intro-sub{
-      font-size:0.78rem;letter-spacing:7px;
+   .intro-sub {
+  font-size:0.72rem;letter-spacing:5px;
       text-transform:uppercase;
       color:transparent;
       margin-top:14px;
@@ -325,7 +325,7 @@
       <div class="sp"></div><div class="sp"></div>
     </div>
     <div class="intro-title">SafeLinks</div>
-    <div class="intro-sub">URL Phishing Detector</div>
+   <div class="intro-sub">URL PHISHING DETECTOR</div>
     <div class="intro-progress-wrap">
       <div class="intro-progress"></div>
     </div>
@@ -436,15 +436,24 @@ for(var i=0;i<18;i++){
 }
 
 // Transition to main page after 3.4s
-setTimeout(function(){
-  document.getElementById('intro').classList.add('hide');
+var hasSeenIntro = sessionStorage.getItem('sl_intro_shown');
+if (hasSeenIntro) {
+  document.getElementById('intro').style.display = 'none';
   document.getElementById('bgImage').classList.add('show');
   document.getElementById('bgOverlay').classList.add('show');
+  document.getElementById('mainPage').classList.add('show');
+  document.getElementById('mainPage').style.transition = 'none';
+} else {
+  sessionStorage.setItem('sl_intro_shown', '1');
   setTimeout(function(){
-    document.getElementById('mainPage').classList.add('show');
-  }, 400);
-}, 3400);
-
+    document.getElementById('intro').classList.add('hide');
+    document.getElementById('bgImage').classList.add('show');
+    document.getElementById('bgOverlay').classList.add('show');
+    setTimeout(function(){
+      document.getElementById('mainPage').classList.add('show');
+    }, 400);
+  }, 3400);
+}
 // ══ TRANSLATIONS ══
 var i18n = {
   en:{subtitle:'URL Phishing Detector',urlLabel:'URL',placeholder:'paste the url here...',or:'OR',fullScan:'Initialize Full Scan',quickScan:'Quick Heuristic Scan',newTo:'New to SafeLinks?',learnMore:'Learn more',scanning:'SCANNING URL...',errorEmpty:'Please enter a URL first.',errorFail:'Scan failed. Please try again.'},

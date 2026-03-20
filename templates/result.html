@@ -156,10 +156,147 @@ var scoreCol = isSafe ? '#00e5a0' : '#ffaa00';
 var scoreGrad = isSafe ? '#00b87a,#00e5a0' : '#e67e00,#ffaa00';
 var icon = isSafe ? '✅' : '⚠️';
 
-var flagsHtml = flags.length
-  ? flags.map(function(f){ return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.83rem;color:rgba(255,255,255,0.65);"><span style="color:#ffaa00;font-size:0.5rem;margin-top:6px;flex-shrink:0;">◆</span><span>'+f+'</span></div>'; }).join('')
-  : '<p style="font-size:0.83rem;color:rgba(255,255,255,0.3);font-style:italic;padding:8px 0;">'+L.nf+'</p>';
+function translateFlag(f, lang) {
+  var flagMap = {
+    en: {
+      'IP address used instead of domain name': 'IP address used instead of domain name',
+      'Suspicious double-slash in URL path': 'Suspicious double-slash in URL path',
+      'Suspicious top-level domain': 'Suspicious top-level domain',
+      'URL shortener detected': 'URL shortener detected',
+      '@ symbol found in URL': '@ symbol found in URL',
+      'Brand name used in subdomain (impersonation)': 'Brand name used in subdomain (impersonation)',
+      'Brand name used in path': 'Brand name used in path',
+      'Domain name appears randomly generated': 'Domain name appears randomly generated',
+      'Unusually long URL': 'Unusually long URL',
+      'Excessive subdomains': 'Excessive subdomains',
+      'Domain contains too many digits': 'Domain contains too many digits',
+      'No HTTPS encryption': 'No HTTPS encryption',
+      'Multiple hyphens in URL': 'Multiple hyphens in URL',
+      'Quick scan': 'Quick scan — domain age not checked'
+    },
+    ml: {
+      'IP address used instead of domain name': 'ഡൊമെയ്ൻ നാമത്തിനു പകരം IP വിലാസം ഉപയോഗിക്കുന്നു',
+      'Suspicious double-slash in URL path': 'URL പാതയിൽ സംശയാസ്പദ ഡബിൾ സ്ലാഷ്',
+      'Suspicious top-level domain': 'സംശയാസ്പദ ടോപ്-ലെവൽ ഡൊമെയ്ൻ',
+      'URL shortener detected': 'URL ഷോർട്ടനർ കണ്ടെത്തി',
+      '@ symbol found in URL': 'URL-ൽ @ ചിഹ്നം കണ്ടെത്തി',
+      'Brand name used in subdomain (impersonation)': 'സബ്ഡൊമെയ്‌നിൽ ബ്രാൻഡ് നാമം (ആൾമാറാട്ടം)',
+      'Brand name used in path': 'പാതയിൽ ബ്രാൻഡ് നാമം ഉപയോഗിച്ചിരിക്കുന്നു',
+      'Domain name appears randomly generated': 'ഡൊമെയ്ൻ നാമം റാൻഡമായി സൃഷ്ടിച്ചതാണ്',
+      'Unusually long URL': 'അസാധാരണ ദൈർഘ്യമുള്ള URL',
+      'Excessive subdomains': 'അമിതമായ സബ്ഡൊമെയ്‌നുകൾ',
+      'Domain contains too many digits': 'ഡൊമെയ്‌നിൽ അധികം അക്കങ്ങൾ',
+      'No HTTPS encryption': 'HTTPS എൻക്രിപ്ഷൻ ഇല്ല',
+      'Multiple hyphens in URL': 'URL-ൽ ഒന്നിലധികം ഹൈഫൻ',
+      'Quick scan': 'ദ്രുത സ്കാൻ — ഡൊമെയ്ൻ പ്രായം പരിശോധിച്ചില്ല'
+    },
+    hi: {
+      'IP address used instead of domain name': 'डोमेन नाम के बजाय IP पता उपयोग किया गया',
+      'Suspicious double-slash in URL path': 'URL पथ में संदिग्ध डबल-स्लैश',
+      'Suspicious top-level domain': 'संदिग्ध शीर्ष-स्तरीय डोमेन',
+      'URL shortener detected': 'URL शॉर्टनर पाया गया',
+      '@ symbol found in URL': 'URL में @ प्रतीक मिला',
+      'Brand name used in subdomain (impersonation)': 'सबडोमेन में ब्रांड नाम (अनुकरण)',
+      'Brand name used in path': 'पथ में ब्रांड नाम उपयोग किया गया',
+      'Domain name appears randomly generated': 'डोमेन नाम यादृच्छिक लगता है',
+      'Unusually long URL': 'असामान्य रूप से लंबा URL',
+      'Excessive subdomains': 'अत्यधिक सबडोमेन',
+      'Domain contains too many digits': 'डोमेन में बहुत अधिक अंक',
+      'No HTTPS encryption': 'HTTPS एन्क्रिप्शन नहीं',
+      'Multiple hyphens in URL': 'URL में कई हाइफ़न',
+      'Quick scan': 'त्वरित स्कैन — डोमेन आयु की जांच नहीं'
+    },
+    ta: {
+      'IP address used instead of domain name': 'டொமைன் பெயருக்கு பதிலாக IP முகவரி',
+      'Suspicious double-slash in URL path': 'URL பாதையில் சந்தேகமான இரட்டை-ஸ்லாஷ்',
+      'Suspicious top-level domain': 'சந்தேகமான டொப்-லெவல் டொமைன்',
+      'URL shortener detected': 'URL சுருக்கி கண்டறியப்பட்டது',
+      '@ symbol found in URL': 'URL-ல் @ குறியீடு கண்டறியப்பட்டது',
+      'Brand name used in subdomain (impersonation)': 'சப்டொமைனில் பிராண்ட் பெயர் (மோசடி)',
+      'Brand name used in path': 'பாதையில் பிராண்ட் பெயர்',
+      'Domain name appears randomly generated': 'டொமைன் பெயர் சீரற்று உருவாக்கப்பட்டது',
+      'Unusually long URL': 'அசாதாரணமாக நீண்ட URL',
+      'Excessive subdomains': 'அதிகப்படியான சப்டொமைன்கள்',
+      'Domain contains too many digits': 'டொமைனில் அதிக இலக்கங்கள்',
+      'No HTTPS encryption': 'HTTPS குறியாக்கம் இல்லை',
+      'Multiple hyphens in URL': 'URL-ல் பல ஹைஃபன்கள்',
+      'Quick scan': 'விரைவு ஸ்கேன் — டொமைன் வயது சரிபார்க்கப்படவில்லை'
+    },
+    te: {
+      'IP address used instead of domain name': 'డొమైన్ పేరుకు బదులు IP చిరునామా',
+      'Suspicious double-slash in URL path': 'URL మార్గంలో అనుమానాస్పద డబుల్-స్లాష్',
+      'Suspicious top-level domain': 'అనుమానాస్పద టాప్-లెవల్ డొమైన్',
+      'URL shortener detected': 'URL షార్టెనర్ కనుగొనబడింది',
+      '@ symbol found in URL': 'URL లో @ చిహ్నం కనుగొనబడింది',
+      'Brand name used in subdomain (impersonation)': 'సబ్‌డొమైన్‌లో బ్రాండ్ పేరు (మోసం)',
+      'Brand name used in path': 'మార్గంలో బ్రాండ్ పేరు',
+      'Domain name appears randomly generated': 'డొమైన్ పేరు యాదృచ్ఛికంగా కనిపిస్తోంది',
+      'Unusually long URL': 'అసాధారణంగా పొడవైన URL',
+      'Excessive subdomains': 'అధిక సబ్‌డొమైన్‌లు',
+      'Domain contains too many digits': 'డొమైన్‌లో చాలా అంకెలు',
+      'No HTTPS encryption': 'HTTPS గుప్తీకరణ లేదు',
+      'Multiple hyphens in URL': 'URL లో బహుళ హైఫన్లు',
+      'Quick scan': 'శీఘ్ర స్కాన్ — డొమైన్ వయసు తనిఖీ చేయబడలేదు'
+    },
+    kn: {
+      'IP address used instead of domain name': 'ಡೊಮೈನ್ ಹೆಸರಿನ ಬದಲು IP ವಿಳಾಸ',
+      'Suspicious double-slash in URL path': 'URL ಮಾರ್ಗದಲ್ಲಿ ಸಂಶಯಾಸ್ಪದ ಡಬಲ್-ಸ್ಲ್ಯಾಶ್',
+      'Suspicious top-level domain': 'ಸಂಶಯಾಸ್ಪದ ಟಾಪ್-ಲೆವೆಲ್ ಡೊಮೈನ್',
+      'URL shortener detected': 'URL ಶಾರ್ಟನರ್ ಪತ್ತೆಯಾಗಿದೆ',
+      '@ symbol found in URL': 'URL ನಲ್ಲಿ @ ಚಿಹ್ನೆ ಪತ್ತೆಯಾಗಿದೆ',
+      'Brand name used in subdomain (impersonation)': 'ಸಬ್‌ಡೊಮೈನ್‌ನಲ್ಲಿ ಬ್ರಾಂಡ್ ಹೆಸರು (ವಂಚನೆ)',
+      'Brand name used in path': 'ಮಾರ್ಗದಲ್ಲಿ ಬ್ರಾಂಡ್ ಹೆಸರು',
+      'Domain name appears randomly generated': 'ಡೊಮೈನ್ ಹೆಸರು ಯಾದೃಚ್ಛಿಕವಾಗಿ ಕಾಣುತ್ತದೆ',
+      'Unusually long URL': 'ಅಸಾಮಾನ್ಯ ಉದ್ದದ URL',
+      'Excessive subdomains': 'ಅತಿಯಾದ ಸಬ್‌ಡೊಮೈನ್‌ಗಳು',
+      'Domain contains too many digits': 'ಡೊಮೈನ್‌ನಲ್ಲಿ ಹೆಚ್ಚು ಅಂಕಿಗಳು',
+      'No HTTPS encryption': 'HTTPS ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಇಲ್ಲ',
+      'Multiple hyphens in URL': 'URL ನಲ್ಲಿ ಬಹು ಹೈಫನ್‌ಗಳು',
+      'Quick scan': 'ತ್ವರಿತ ಸ್ಕ್ಯಾನ್ — ಡೊಮೈನ್ ವಯಸ್ಸು ಪರಿಶೀಲಿಸಲಾಗಿಲ್ಲ'
+    }
+  };
 
+  var langMap = flagMap[lang] || flagMap['en'];
+  // Check for partial matches
+  for (var key in langMap) {
+    if (f.toLowerCase().indexOf(key.toLowerCase()) > -1) {
+      return langMap[lang][key] || langMap['en'][key] || f;
+    }
+  }
+  // Handle dynamic flags like "Domain is only X days old"
+  if (f.indexOf('days old') > -1) {
+    var days = f.match(/\d+/);
+    var d = days ? days[0] : '';
+    var ageMap = {
+      ml: 'ഡൊമെയ്ൻ ' + d + ' ദിവസം മാത്രം പഴക്കമുള്ളതാണ്!',
+      hi: 'डोमेन केवल ' + d + ' दिन पुराना है!',
+      ta: 'டொமைன் ' + d + ' நாட்கள் மட்டுமே பழமையானது!',
+      te: 'డొమైన్ కేవలం ' + d + ' రోజులు మాత్రమే పాతది!',
+      kn: 'ಡೊಮೈನ್ ಕೇವಲ ' + d + ' ದಿನಗಳು ಮಾತ್ರ ಹಳೆಯದು!'
+    };
+    return ageMap[lang] || f;
+  }
+  if (f.indexOf('suspicious keywords') > -1) {
+    var num = f.match(/\d+/);
+    var n = num ? num[0] : '';
+    var kwMap = {
+      ml: n + ' സംശയാസ്പദ കീവേഡുകൾ കണ്ടെത്തി',
+      hi: n + ' संदिग्ध कीवर्ड मिले',
+      ta: n + ' சந்தேகமான முக்கிய வார்த்தைகள் கண்டறியப்பட்டன',
+      te: n + ' అనుమానాస్పద కీవర్డ్‌లు కనుగొనబడ్డాయి',
+      kn: n + ' ಸಂಶಯಾಸ್ಪದ ಕೀವರ್ಡ್‌ಗಳು ಕಂಡುಬಂದಿವೆ'
+    };
+    return kwMap[lang] || f;
+  }
+  if (f.indexOf('ML Model') > -1) return f;
+  return f;
+}
+var flagsHtml = flags.length
+  ? flags.map(function(f){
+      var translated = translateFlag(f, lang);
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.83rem;color:rgba(255,255,255,0.65);"><span style="color:#ffaa00;font-size:0.5rem;margin-top:6px;flex-shrink:0;">◆</span><span>'+translated+'</span></div>';
+    }).join('')
+  : '<p style="font-size:0.83rem;color:rgba(255,255,255,0.3);font-style:italic;padding:8px 0;">'+L.nf+'</p>';
 document.getElementById('RC').innerHTML =
   '<div style="background:rgba(12,12,12,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:28px;padding:32px 28px;backdrop-filter:blur(80px);-webkit-backdrop-filter:blur(80px);box-shadow:0 50px 100px rgba(0,0,0,0.9),inset 0 1px 0 rgba(255,255,255,0.08);animation:fadeUp 0.5s ease;position:relative;overflow:hidden;">' +
   '<div style="position:absolute;top:-1px;left:12%;right:12%;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,'+(isSafe?'#00ff88,#00e5a0':'#ff9900,#ffcc00')+',transparent);"></div>' +
