@@ -237,58 +237,58 @@ setTimeout(function(){
 // ── AI DESCRIPTIONS ───────────────────────────────────────────
 var descs = {
   en:{
-    ip:'🚨 <strong>CRITICAL — IP Address Attack:</strong> This URL uses a raw IP address instead of a domain name — a classic phishing technique. Score: <strong>'+score+'/100</strong>. Do NOT visit.',
-    br:'🚨 <strong>Brand Impersonation:</strong> Mimicking a trusted brand to steal your credentials. Score: <strong>'+score+'/100</strong>.',
-    sh:'⚠️ <strong>URL Shortener:</strong> Hiding its real destination. Score: <strong>'+score+'/100</strong>.',
-    nd:'⚠️ <strong>New Domain:</strong> Registered only '+(data.domain_age_days||'a few')+' days ago. Score: <strong>'+score+'/100</strong>.',
-    kw:'⚠️ <strong>Credential Harvesting:</strong> Contains login/verify/secure/account/confirm keywords. '+flags.length+' indicators, score: <strong>'+score+'/100</strong>. Never enter personal info.',
-    at:'🚨 <strong>@ Symbol Attack:</strong> Browsers ignore everything before @, redirecting elsewhere. Score: <strong>'+score+'/100</strong>.',
-    gn:'🚨 <strong>'+flags.length+' threat indicators detected.</strong> Danger score: <strong>'+score+'/100</strong>.<br>'+(data.https?'':'No HTTPS. ')+flags.map(function(f){ return '• '+f; }).join('<br>')
+    ip:'🚨 <strong>CRITICAL — IP Address Attack Detected:</strong> This URL uses a raw IP address (<strong>'+domain+'</strong>) instead of a registered domain name. Legitimate websites — banks, social media, shopping platforms — always use proper domain names. Cybercriminals host phishing pages on raw IP addresses specifically to avoid domain blacklists and detection systems. Your login credentials, banking details, and personal information are at serious risk if you visit this URL. <strong>Score: '+score+'/100 — Do NOT visit under any circumstances.</strong>',
+    br:'🚨 <strong>Phishing Alert — Brand Impersonation Detected:</strong> This URL is mimicking a well-known trusted brand to steal your passwords and personal information. Attackers create pixel-perfect copies of official websites to trick you into entering your credentials. The domain <strong>'+domain+'</strong> is NOT the official website. With <strong>'+flags.length+' threat indicators</strong> and a score of <strong>'+score+'/100</strong>, this is an active phishing operation. If you have already entered any credentials, change your passwords immediately.',
+    sh:'⚠️ <strong>URL Shortener Hiding Real Destination:</strong> This link uses a URL shortening service to completely conceal where it actually leads. Phishing attackers abuse URL shorteners because they bypass security filters. The real destination could be a credential harvesting page, malware download, or scam website. <strong>Score: '+score+'/100.</strong> Never click shortened links from unknown sources.',
+    nd:'⚠️ <strong>Newly Registered Domain — High Risk:</strong> The domain <strong>'+domain+'</strong> was registered only <strong>'+(data.domain_age_days||'a few')+' days ago</strong>. Cybercriminals register fresh domains for phishing campaigns and abandon them before getting blacklisted. Established legitimate businesses have domains that are months or years old. With <strong>'+flags.length+' indicators</strong> and score <strong>'+score+'/100</strong>, this matches an active phishing campaign.',
+    kw:'⚠️ <strong>Credential Harvesting Attempt Detected:</strong> This URL contains a dangerous concentration of phishing keywords — specifically words like <em>login, verify, secure, account, confirm, update, password</em>. These are deliberately embedded by attackers to make fake pages appear legitimate. Phishing pages designed this way target services like PayPal, Amazon, Google, and banking portals. With <strong>'+flags.length+' threat indicators</strong> and a danger score of <strong>'+score+'/100</strong>, never enter any personal information, passwords, or payment details on this page.',
+    at:'🚨 <strong>URL Redirect Trick — @ Symbol Attack:</strong> This URL contains an <strong>@ symbol</strong> — a known phishing technique. Browsers completely ignore everything before the @ symbol and only navigate to the domain after it. So a URL like <em>paypal.com@malicious-site.com</em> takes you to malicious-site.com, NOT PayPal. With <strong>'+flags.length+' indicators</strong> and score <strong>'+score+'/100</strong>, this URL is engineered to deceive. Do NOT visit.',
+    gn:'🚨 <strong>Multiple Threat Indicators Detected:</strong> Comprehensive analysis of <strong>'+domain+'</strong> found <strong>'+flags.length+' distinct threat indicators</strong> with a danger score of <strong>'+score+'/100</strong>. '+(data.https?'':'No HTTPS encryption detected. ')+' The combination of risk factors is consistent with URLs used in phishing campaigns and malware distribution.<br><br><strong>Threats found:</strong><br>'+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><br><strong>Do not visit this URL or enter any personal information.</strong>'
   },
   ml:{
-    ip:'🚨 <strong>IP വിലാസ ആക്രമണം:</strong> '+domain+' ഒരു IP വിലാസം ഉപയോഗിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>. സന്ദർശിക്കരുത്.',
-    br:'🚨 <strong>ബ്രാൻഡ് ആൾമാറാട്ടം:</strong> ഒരു വിശ്വസ്ത ബ്രാൻഡ് അനുകരിക്കുന്നു. <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>.',
-    sh:'⚠️ <strong>URL ഷോർട്ടനർ:</strong> യഥാർത്ഥ ലക്ഷ്യം മറഞ്ഞിരിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>.',
-    nd:'⚠️ <strong>പുതിയ ഡൊമെയ്ൻ:</strong> '+(data.domain_age_days||'കുറച്ച്')+' ദിവസം മുമ്പ് രജിസ്റ്റർ ചെയ്തതാണ്. സ്കോർ: <strong>'+score+'/100</strong>.',
-    kw:'⚠️ <strong>ക്രെഡൻഷ്യൽ ഹാർവെസ്റ്റിംഗ്:</strong> login, verify, secure, account, confirm കീവേഡുകൾ. <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>.',
-    at:'🚨 <strong>@ ചിഹ്ന ആക്രമണം:</strong> @ ചിഹ്നത്തിന് മുമ്പുള്ളതെല്ലാം ബ്രൗസർ അവഗണിക്കുന്നു. സ്കോർ: <strong>'+score+'/100</strong>.',
-    gn:'🚨 <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ.</strong> അപകട സ്കോർ: <strong>'+score+'/100</strong>.'
+    ip:'🚨 <strong>ഗുരുതരം — IP വിലാസ ആക്രമണം:</strong> ഈ URL ഒരു IP വിലാസം (<strong>'+domain+'</strong>) ഉപയോഗിക്കുന്നു — ഒരു ശരിയായ ഡൊമെയ്ൻ നാമത്തിനു പകരം. ബാങ്കുകൾ, സോഷ്യൽ മീഡിയ, ഷോപ്പിംഗ് പ്ലാറ്റ്‌ഫോമുകൾ — ഒരിക്കലും IP വിലാസങ്ങൾ ഉപയോഗിക്കില്ല. സൈബർ കുറ്റവാളികൾ ഡൊമെയ്ൻ ബ്ലാക്ക്‌ലിസ്റ്റ് ഒഴിവാക്കാൻ ഈ തന്ത്രം ഉപയോഗിക്കുന്നു. നിങ്ങളുടെ ലോഗിൻ വിവരങ്ങൾ, ബാങ്കിംഗ് വിശദാംശങ്ങൾ, വ്യക്തിഗത വിവരങ്ങൾ ഗുരുതരമായ അപകടത്തിലാണ്. <strong>സ്കോർ: '+score+'/100 — ഒരു കാരണവശാലും ഈ URL സന്ദർശിക്കരുത്.</strong>',
+    br:'🚨 <strong>ഫിഷിംഗ് മുന്നറിയിപ്പ് — ബ്രാൻഡ് ആൾമാറാട്ടം:</strong> ഈ URL (<strong>'+domain+'</strong>) ഒരു വിശ്വസ്ത ബ്രാൻഡ് അനുകരിക്കുന്നു — നിങ്ങളുടെ പാസ്‌വേഡും വ്യക്തിഗത വിവരങ്ങളും മോഷ്ടിക്കാൻ. ആക്രമണകാരികൾ ഒഫീഷ്യൽ വെബ്‌സൈറ്റിന്റെ കൃത്യമായ പകർപ്പ് ഉണ്ടാക്കുന്നു. <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>. ഇതിനകം ക്രെഡൻഷ്യലുകൾ നൽകിയെങ്കിൽ ഉടനടി പാസ്‌വേഡ് മാറ്റുക.',
+    sh:'⚠️ <strong>URL ഷോർട്ടനർ — യഥാർത്ഥ ലക്ഷ്യം മറഞ്ഞിരിക്കുന്നു:</strong> ഈ ലിങ്ക് URL ഷോർട്ടനിംഗ് സേവനം ഉപയോഗിക്കുന്നു — അത് യഥാർത്ഥ ലക്ഷ്യം പൂർണ്ണമായും മറയ്ക്കുന്നു. ഫിഷിംഗ് ആക്രമണകാരികൾ സുരക്ഷാ ഫിൽട്ടറുകൾ ഒഴിവാക്കാൻ URL ഷോർട്ടനറുകൾ ദുരുപയോഗം ചെയ്യുന്നു. <strong>സ്കോർ: '+score+'/100.</strong> അജ്ഞാത ഉറവിടങ്ങളിൽ നിന്ന് ഷോർട്ടൻ ചെയ്ത ലിങ്കുകൾ ക്ലിക്ക് ചെയ്യരുത്.',
+    nd:'⚠️ <strong>പുതുതായി രജിസ്റ്റർ ചെയ്ത ഡൊമെയ്ൻ — ഉയർന്ന അപകടം:</strong> <strong>'+domain+'</strong> ഡൊമെയ്ൻ വെറും <strong>'+(data.domain_age_days||'കുറച്ച്')+' ദിവസം</strong> മുമ്പ് മാത്രം രജിസ്റ്റർ ചെയ്തതാണ്. സൈബർ കുറ്റവാളികൾ ഫിഷിംഗ് കാംപെയ്‌നുകൾക്കായി പുതിയ ഡൊമെയ്‌നുകൾ രജിസ്റ്റർ ചെയ്ത് ബ്ലാക്ക്‌ലിസ്റ്റ് ആകുന്നതിന് മുമ്പ് ഉപേക്ഷിക്കുന്നു. <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>ക്രെഡൻഷ്യൽ ഹാർവെസ്റ്റിംഗ് ശ്രമം:</strong> ഈ URL ഫിഷിംഗ് പേജുകളിൽ സ്വഭാവ ലക്ഷണങ്ങളായ <em>login, verify, secure, account, confirm, update, password</em> തുടങ്ങിയ അപകടകരമായ കീവേഡുകൾ അടങ്ങിയിരിക്കുന്നു. PayPal, Amazon, Google, ബാങ്കിംഗ് പോർട്ടലുകൾ പോലുള്ള സേവനങ്ങൾ ടാർഗറ്റ് ചെയ്യുന്ന ഫിഷിംഗ് പേജുകൾ ഇങ്ങനെ ഡിസൈൻ ചെയ്യുന്നു. <strong>'+flags.length+' ഭീഷണി സൂചകങ്ങൾ</strong>, അപകട സ്കോർ: <strong>'+score+'/100</strong>. ഈ പേജിൽ ഒരിക്കലും വ്യക്തിഗത വിവരങ്ങൾ, പാസ്‌വേഡ്, പേയ്‌മെന്റ് വിശദാംശങ്ങൾ നൽകരുത്.',
+    at:'🚨 <strong>URL റീഡയറക്ട് തന്ത്രം — @ ചിഹ്ന ആക്രമണം:</strong> ഈ URL-ൽ <strong>@ ചിഹ്നം</strong> അടങ്ങിയിരിക്കുന്നു — ഒരു അറിയപ്പെടുന്ന ഫിഷിംഗ് തന്ത്രം. ബ്രൗസറുകൾ @ ചിഹ്നത്തിന് മുമ്പുള്ളതെല്ലാം പൂർണ്ണമായും അവഗണിക്കുന്നു. അതിനാൽ <em>paypal.com@malicious-site.com</em> എന്ന URL നിങ്ങളെ PayPal-ലേക്കല്ല, malicious-site.com-ലേക്ക് കൊണ്ടുപോകുന്നു. <strong>'+flags.length+' സൂചകങ്ങൾ</strong>, സ്കോർ: <strong>'+score+'/100</strong>. ഈ URL സന്ദർശിക്കരുത്.',
+    gn:'🚨 <strong>ഒന്നിലധികം ഭീഷണി സൂചകങ്ങൾ കണ്ടെത്തി:</strong> <strong>'+domain+'</strong>-ന്റെ സമഗ്ര വിശകലനം <strong>'+flags.length+' വ്യതിരിക്ത ഭീഷണി സൂചകങ്ങൾ</strong> തിരിച്ചറിഞ്ഞു, അപകട സ്കോർ: <strong>'+score+'/100</strong>. '+(data.https?'':'HTTPS എൻക്രിപ്ഷൻ ഇല്ല. ')+' ഈ URL ഫിഷിംഗ് കാംപെയ്‌നുകൾക്കും ക്ഷുദ്രവെയർ വിതരണത്തിനും ഉപയോഗിക്കുന്ന URL-കളുടെ പ്രൊഫൈലുമായി പൊരുത്തപ്പെടുന്നു.<br><br><strong>കണ്ടെത്തിയ ഭീഷണികൾ:</strong><br>'+flags.map(function(f){ return '• '+translateFlag(f,lang); }).join('<br>')+'<br><br><strong>ഈ URL സന്ദർശിക്കരുത്. ഒരിക്കലും വ്യക്തിഗത വിവരങ്ങൾ നൽകരുത്.</strong>'
   },
   hi:{
-    ip:'🚨 <strong>IP पते का हमला।</strong> स्कोर: <strong>'+score+'/100</strong>। न जाएं।',
-    br:'🚨 <strong>ब्रांड अनुकरण।</strong> '+flags.length+' संकेतक, स्कोर: <strong>'+score+'/100</strong>।',
-    sh:'⚠️ <strong>URL शॉर्टनर।</strong> स्कोर: <strong>'+score+'/100</strong>।',
-    nd:'⚠️ <strong>नया डोमेन।</strong> स्कोर: <strong>'+score+'/100</strong>।',
-    kw:'⚠️ <strong>संदिग्ध कीवर्ड।</strong> '+flags.length+' संकेतक, स्कोर: <strong>'+score+'/100</strong>।',
-    at:'🚨 <strong>@ प्रतीक।</strong> स्कोर: <strong>'+score+'/100</strong>।',
-    gn:'🚨 <strong>'+flags.length+' खतरे।</strong> स्कोर: <strong>'+score+'/100</strong>।'
+    ip:'🚨 <strong>गंभीर — IP पते का हमला:</strong> यह URL एक IP पते (<strong>'+domain+'</strong>) का उपयोग करता है। बैंक, सोशल मीडिया, शॉपिंग प्लेटफॉर्म कभी IP पतों का उपयोग नहीं करते। साइबर अपराधी डोमेन ब्लैकलिस्ट से बचने के लिए यह तकनीक उपयोग करते हैं। <strong>स्कोर: '+score+'/100 — इस URL पर किसी भी परिस्थिति में न जाएं।</strong>',
+    br:'🚨 <strong>फ़िशिंग चेतावनी — ब्रांड अनुकरण:</strong> यह URL (<strong>'+domain+'</strong>) एक विश्वसनीय ब्रांड की नकल करता है। हमलावर आपके पासवर्ड चुराने के लिए असली साइट की हूबहू नकल बनाते हैं। <strong>'+flags.length+' संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong>। यदि आपने पहले से क्रेडेंशियल दर्ज किए हैं, तुरंत पासवर्ड बदलें।',
+    sh:'⚠️ <strong>URL शॉर्टनर — असली गंतव्य छुपा है:</strong> यह लिंक URL शॉर्टनिंग सेवा का उपयोग करता है जो असली गंतव्य पूरी तरह छुपाता है। फ़िशिंग हमलावर सुरक्षा फ़िल्टर से बचने के लिए इसका दुरुपयोग करते हैं। <strong>स्कोर: '+score+'/100।</strong> अज्ञात स्रोतों से छोटे लिंक पर क्लिक न करें।',
+    nd:'⚠️ <strong>नया पंजीकृत डोमेन — उच्च जोखिम:</strong> <strong>'+domain+'</strong> डोमेन केवल <strong>'+(data.domain_age_days||'कुछ')+' दिन</strong> पहले पंजीकृत हुआ। साइबर अपराधी फ़िशिंग अभियानों के लिए नए डोमेन पंजीकृत करते हैं। <strong>'+flags.length+' संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong>।',
+    kw:'⚠️ <strong>क्रेडेंशियल चोरी का प्रयास:</strong> इस URL में <em>login, verify, secure, account, confirm, update, password</em> जैसे खतरनाक कीवर्ड हैं। ये फ़िशिंग पेजों की पहचान हैं। <strong>'+flags.length+' खतरे के संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong>। इस पेज पर कोई भी व्यक्तिगत जानकारी दर्ज न करें।',
+    at:'🚨 <strong>URL रीडायरेक्ट ट्रिक — @ प्रतीक:</strong> इस URL में <strong>@ प्रतीक</strong> है। ब्राउज़र @ से पहले सब कुछ अनदेखा करता है। <strong>'+flags.length+' संकेतक</strong>, स्कोर: <strong>'+score+'/100</strong>। न जाएं।',
+    gn:'🚨 <strong>'+flags.length+' खतरे के संकेतक मिले।</strong> खतरा स्कोर: <strong>'+score+'/100</strong>. '+(data.https?'':'HTTPS नहीं है। ')+flags.map(function(f){ return '• '+f; }).join('<br>')+'<br><strong>इस URL पर न जाएं।</strong>'
   },
   ta:{
-    ip:'🚨 <strong>IP முகவரி தாக்குதல்.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    br:'🚨 <strong>பிராண்ட் மோசடி.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    sh:'⚠️ <strong>சுருக்கப்பட்ட URL.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    nd:'⚠️ <strong>புதிய டொமைன்.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    kw:'⚠️ <strong>சந்தேக வார்த்தைகள்.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    at:'🚨 <strong>@ குறியீடு தாக்குதல்.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.',
-    gn:'🚨 <strong>'+flags.length+' அச்சுறுத்தல்கள்.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.'
+    ip:'🚨 <strong>தீவிரம் — IP முகவரி தாக்குதல்:</strong> இந்த URL ஒரு IP முகவரியை (<strong>'+domain+'</strong>) பயன்படுத்துகிறது. வங்கிகள், சமூக ஊடகங்கள் IP முகவரிகளை பயன்படுத்துவதில்லை. <strong>மதிப்பெண்: '+score+'/100 — எந்த சூழ்நிலையிலும் இந்த URL பார்வையிட வேண்டாம்.</strong>',
+    br:'🚨 <strong>ஃபிஷிங் எச்சரிக்கை — பிராண்ட் மோசடி:</strong> இந்த URL (<strong>'+domain+'</strong>) நம்பகமான பிராண்டை பின்பற்றுகிறது. <strong>'+flags.length+' குறிகாட்டிகள்</strong>, மதிப்பெண்: <strong>'+score+'/100</strong>. உங்கள் கடவுச்சொல்லை உடனடியாக மாற்றவும்.',
+    sh:'⚠️ <strong>URL சுருக்கி — உண்மையான இடம் மறைக்கப்பட்டது:</strong> <strong>மதிப்பெண்: '+score+'/100.</strong> அறியப்படாத மூலங்களிலிருந்து சுருக்கப்பட்ட இணைப்புகளை கிளிக் செய்ய வேண்டாம்.',
+    nd:'⚠️ <strong>புதிய டொமைன் — அதிக அபாயம்:</strong> <strong>'+domain+'</strong> வெறும் <strong>'+(data.domain_age_days||'சில')+' நாட்கள்</strong> முன்பு பதிவு செய்யப்பட்டது. <strong>'+flags.length+' குறிகாட்டிகள்</strong>, மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>நற்சான்றிதழ் அறுவடை முயற்சி:</strong> <em>login, verify, secure, account, confirm</em> போன்ற ஃபிஷிங் சொற்கள் உள்ளன. <strong>'+flags.length+' குறிகாட்டிகள்</strong>, மதிப்பெண்: <strong>'+score+'/100</strong>. தனிப்பட்ட தகவல்களை உள்ளிட வேண்டாம்.',
+    at:'🚨 <strong>@ குறியீடு தாக்குதல்:</strong> உலாவிகள் @ க்கு முன்னால் உள்ள அனைத்தையும் புறக்கணிக்கின்றன. <strong>'+flags.length+' குறிகாட்டிகள்</strong>, மதிப்பெண்: <strong>'+score+'/100</strong>.',
+    gn:'🚨 <strong>'+flags.length+' அச்சுறுத்தல் குறிகாட்டிகள் கண்டறியப்பட்டன.</strong> மதிப்பெண்: <strong>'+score+'/100</strong>.<br>'+flags.map(function(f){ return '• '+translateFlag(f,lang); }).join('<br>')+'<br><strong>இந்த URL பார்வையிட வேண்டாம்.</strong>'
   },
   te:{
-    ip:'🚨 <strong>IP చిరునామా దాడి.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    br:'🚨 <strong>బ్రాండ్ మోసం.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    sh:'⚠️ <strong>చిన్న URL.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    nd:'⚠️ <strong>కొత్త డొమైన్.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    kw:'⚠️ <strong>అనుమానాస్పద పదాలు.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    at:'🚨 <strong>@ గుర్తు దాడి.</strong> స్కోర్: <strong>'+score+'/100</strong>.',
-    gn:'🚨 <strong>'+flags.length+' బెదిరింపులు.</strong> స్కోర్: <strong>'+score+'/100</strong>.'
+    ip:'🚨 <strong>తీవ్రం — IP చిరునామా దాడి:</strong> ఈ URL IP చిరునామాను (<strong>'+domain+'</strong>) ఉపయోగిస్తోంది. <strong>స్కోర్: '+score+'/100 — ఈ URL సందర్శించవద్దు.</strong>',
+    br:'🚨 <strong>ఫిషింగ్ — బ్రాండ్ మోసం:</strong> ఈ URL విశ్వసనీయ బ్రాండ్‌ను అనుకరిస్తోంది. <strong>'+flags.length+' సూచికలు</strong>, స్కోర్: <strong>'+score+'/100</strong>.',
+    sh:'⚠️ <strong>URL షార్టెనర్ — నిజమైన గమ్యం దాగి ఉంది:</strong> స్కోర్: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ <strong>కొత్త డొమైన్ — అధిక ప్రమాదం:</strong> <strong>'+domain+'</strong> కేవలం <strong>'+(data.domain_age_days||'కొన్ని')+' రోజులు</strong> మాత్రమే. స్కోర్: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>క్రెడెన్షియల్ హార్వెస్టింగ్:</strong> login, verify, secure, account కీవర్డ్‌లు ఉన్నాయి. <strong>'+flags.length+' సూచికలు</strong>, స్కోర్: <strong>'+score+'/100</strong>.',
+    at:'🚨 <strong>@ గుర్తు దాడి:</strong> బ్రౌజర్‌లు @ కు ముందు ఉన్నదంతా విస్మరిస్తాయి. స్కోర్: <strong>'+score+'/100</strong>.',
+    gn:'🚨 <strong>'+flags.length+' బెదిరింపు సూచికలు.</strong> స్కోర్: <strong>'+score+'/100</strong>.<br>'+flags.map(function(f){ return '• '+f; }).join('<br>')
   },
   kn:{
-    ip:'🚨 <strong>IP ವಿಳಾಸ ದಾಳಿ.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    br:'🚨 <strong>ಬ್ರಾಂಡ್ ವಂಚನೆ.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    sh:'⚠️ <strong>ಸಂಕ್ಷಿಪ್ತ URL.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    nd:'⚠️ <strong>ಹೊಸ ಡೊಮೈನ್.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    kw:'⚠️ <strong>ಸಂಶಯಾಸ್ಪದ ಕೀವರ್ಡ್‌ಗಳು.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    at:'🚨 <strong>@ ಚಿಹ್ನೆ ದಾಳಿ.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
-    gn:'🚨 <strong>'+flags.length+' ಬೆದರಿಕೆಗಳು.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.'
+    ip:'🚨 <strong>ತೀವ್ರ — IP ವಿಳಾಸ ದಾಳಿ:</strong> ಈ URL IP ವಿಳಾಸ (<strong>'+domain+'</strong>) ಬಳಸುತ್ತಿದೆ. <strong>ಸ್ಕೋರ್: '+score+'/100 — ಭೇಟಿ ಮಾಡಬೇಡಿ.</strong>',
+    br:'🚨 <strong>ಬ್ರಾಂಡ್ ವಂಚನೆ:</strong> ನಂಬಿಕಾರ್ಹ ಬ್ರಾಂಡ್ ಅನುಕರಿಸುತ್ತಿದೆ. <strong>'+flags.length+' ಸೂಚಕಗಳು</strong>, ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    sh:'⚠️ <strong>URL ಶಾರ್ಟನರ್:</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    nd:'⚠️ <strong>ಹೊಸ ಡೊಮೈನ್:</strong> <strong>'+(data.domain_age_days||'ಕೆಲವು')+' ದಿನಗಳು</strong> ಮಾತ್ರ. ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    kw:'⚠️ <strong>ಸಂಶಯಾಸ್ಪದ ಕೀವರ್ಡ್‌ಗಳು:</strong> <strong>'+flags.length+' ಸೂಚಕಗಳು</strong>, ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    at:'🚨 <strong>@ ಚಿಹ್ನೆ ದಾಳಿ:</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.',
+    gn:'🚨 <strong>'+flags.length+' ಬೆದರಿಕೆಗಳು.</strong> ಸ್ಕೋರ್: <strong>'+score+'/100</strong>.<br>'+flags.map(function(f){ return '• '+f; }).join('<br>')
   }
 };
 
