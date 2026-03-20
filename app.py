@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import re
+from dotenv import load_dotenv
+load_dotenv()
 import urllib.parse
 import tldextract
 import whois
@@ -435,8 +437,10 @@ def api_chat():
         if not user_message:
             return jsonify({'error': 'No message'}), 400
 
-        client = anthropic.Anthropic(
+        client = anthropic.Anthropic (
             api_key=os.environ.get('ANTHROPIC_API_KEY', '')
+            print(f"API Key loaded: {'YES' if api_key else 'NO - KEY MISSING!'}")
+client = anthropic.Anthropic(api_key=api_key)
         )
 
         system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant built into SafeLinks — a URL phishing detection tool.
