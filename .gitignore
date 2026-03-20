@@ -4,3 +4,4 @@ venv/
 *.pkl
 *.db
 phishtank.csv
+.env

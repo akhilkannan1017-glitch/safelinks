@@ -9,3 +9,4 @@ pandas
 numpy
 gunicorn
 anthropic
+python-dotenv
