@@ -437,11 +437,9 @@ def api_chat():
         if not user_message:
             return jsonify({'error': 'No message'}), 400
 
-        client = anthropic.Anthropic (
-            api_key=os.environ.get('ANTHROPIC_API_KEY', '')
-            print(f"API Key loaded: {'YES' if api_key else 'NO - KEY MISSING!'}")
-client = anthropic.Anthropic(api_key=api_key)
-        )
+        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+        print(f"API Key loaded: {'YES' if api_key else 'NO - KEY MISSING!'}")
+        client = anthropic.Anthropic(api_key=api_key)
 
         system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant built into SafeLinks — a URL phishing detection tool.
 
