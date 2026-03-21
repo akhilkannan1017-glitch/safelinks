@@ -5,7 +5,7 @@ from datetime import datetime
 DB_PATH = os.path.join(os.path.dirname(__file__), 'safelinks.db')
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS scan_history (
@@ -41,7 +41,7 @@ def init_db():
 
 def save_scan(url, domain, score, verdict, scan_mode, https,
               domain_age_days, flags, detection_method, ml_confidence):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     c = conn.cursor()
     import json
     c.execute('''
@@ -71,7 +71,7 @@ def save_scan(url, domain, score, verdict, scan_mode, https,
     conn.close()
 
 def get_history(limit=50):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH,timeout=30)
     c = conn.cursor()
     import json
     c.execute('''
@@ -103,7 +103,7 @@ def get_history(limit=50):
     return result
 
 def get_stats():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     c = conn.cursor()
     c.execute('SELECT * FROM stats WHERE id=1')
     row = c.fetchone()
@@ -119,7 +119,7 @@ def get_stats():
     return {}
 
 def clear_history():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     c = conn.cursor()
     c.execute('DELETE FROM scan_history')
     c.execute('UPDATE stats SET total_scans=0, total_safe=0, total_suspicious=0, total_dangerous=0 WHERE id=1')
