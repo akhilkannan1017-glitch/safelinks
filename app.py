@@ -439,7 +439,7 @@ def api_chat():
 
         api_key = os.environ.get('GEMINI_API_KEY', '')
         genai.configure(api_key=api_key)
-        client = genai.GenerativeModel('gemini-1.5-flash')
+        client = genai.GenerativeModel('gemini-2.0-flash')
 
         system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant. 
 Your expertise: phishing attacks, URL analysis, safe browsing, malware, social engineering.
