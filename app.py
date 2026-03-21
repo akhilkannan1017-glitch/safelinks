@@ -12,7 +12,7 @@ import joblib
 import numpy as np
 import os
 import json
-import anthropic
+import google.generativeai as genai
 from threat_feed import (check_threat_db, get_feed_stats,
                           start_feed_scheduler, init_threat_db)
 
@@ -437,48 +437,20 @@ def api_chat():
         if not user_message:
             return jsonify({'error': 'No message'}), 400
 
-        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-        print(f"API Key loaded: {'YES' if api_key else 'NO - KEY MISSING!'}")
-        client = anthropic.Anthropic(api_key=api_key)
+        api_key = os.environ.get('GEMINI_API_KEY', '')
+        genai.configure(api_key=api_key)
+        client = genai.GenerativeModel('gemini-1.5-flash')
 
-        system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant built into SafeLinks — a URL phishing detection tool.
+        system_prompt = """You are SafeLinks AI, a friendly cybersecurity assistant. 
+Your expertise: phishing attacks, URL analysis, safe browsing, malware, social engineering.
+Be friendly, clear and educational. Keep responses concise."""
 
-Your expertise: phishing attacks, URL analysis, safe browsing, malware, social engineering, password security, data breaches, cybersecurity best practices.
-
-Guidelines:
-- Be friendly, clear and educational
-- Use simple language suitable for all ages
-- Use emojis to make responses engaging  
-- Keep responses concise (3-4 paragraphs max)
-- Always relate answers back to URL and online safety
-- If someone asks about a specific URL, guide them to use SafeLinks scanner
-- Never help create phishing attacks
-- End with a practical actionable tip"""
-
-        messages = []
-        for h in history[-8:]:
-            if h.get('role') in ['user', 'assistant']:
-                messages.append({
-                    'role': h['role'],
-                    'content': h['content']
-                })
-
-        if not messages or messages[-1]['role'] != 'user':
-            messages.append({'role': 'user', 'content': user_message})
-
-        response = client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=600,
-            system=system_prompt,
-            messages=messages
-        )
-
-        reply = response.content[0].text
+        response = client.generate_content(system_prompt + "\nUser: " + user_message)
+        reply = response.text
         return jsonify({'reply': reply})
 
     except Exception as e:
         print(f"Chat error: {e}")
-        return jsonify({'reply': 'I am having trouble connecting right now. Please try again in a moment! 🙏'}), 200
-
+        return jsonify({'reply': 'I am having trouble connecting right now. Please try again in a moment! 🙏'})
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
