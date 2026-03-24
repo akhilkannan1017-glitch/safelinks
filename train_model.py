@@ -132,17 +132,73 @@ FEATURE_NAMES = [
     'has_port', 'is_https_in_domain', 'letters_ratio', 'digits_ratio'
 ]
 
-# ─── DATASET ──────────────────────────────────────────────────
-print("\n[1/4] Loading dataset...")
+# ─── DOWNLOAD REAL DATASETS ───────────────────────────────────
+print("Downloading real phishing datasets...")
 
-# Built-in dataset for training
-phishing_urls = [
-    # Known phishing patterns
+phishing_urls = []
+safe_urls = []
+
+# Download from OpenPhish (free, no key needed)
+try:
+    import urllib.request
+    print("  Fetching OpenPhish...")
+    req = urllib.request.Request(
+        'https://openphish.com/feed.txt',
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        data = r.read().decode('utf-8')
+    urls = [u.strip() for u in data.split('\n')
+            if u.strip().startswith('http')]
+    phishing_urls.extend(urls[:2000])
+    print(f"  OpenPhish: {len(urls)} URLs")
+except Exception as e:
+    print(f"  OpenPhish failed: {e}")
+
+# Download from URLhaus
+try:
+    print("  Fetching URLhaus...")
+    req = urllib.request.Request(
+        'https://urlhaus.abuse.ch/downloads/text_recent/',
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    with urllib.request.urlopen(req, timeout=15) as r:
+        data = r.read().decode('utf-8')
+    urls = [u.strip() for u in data.split('\n')
+            if u.strip().startswith('http')
+            and not u.strip().startswith('#')]
+    phishing_urls.extend(urls[:2000])
+    print(f"  URLhaus: {len(urls)} URLs")
+except Exception as e:
+    print(f"  URLhaus failed: {e}")
+
+# Download PhishTank
+try:
+    print("  Fetching PhishTank...")
+    req = urllib.request.Request(
+        'http://data.phishtank.com/data/online-valid.csv',
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = r.read().decode('utf-8', errors='ignore')
+    lines = data.split('\n')[1:]
+    for line in lines[:3000]:
+        parts = line.split(',')
+        if len(parts) > 1:
+            url = parts[1].strip().strip('"')
+            if url.startswith('http'):
+                phishing_urls.append(url)
+    print(f"  PhishTank: added URLs")
+except Exception as e:
+    print(f"  PhishTank failed: {e}")
+
+# Built-in phishing patterns (always included)
+builtin_phishing = [
     "http://paypal-secure-login.tk/verify/account",
     "http://amazon-account-update.ml/confirm/password",
-    "http://google-account-signin-verify.xyz/update",
-    "http://apple-id-locked.cf/signin/confirm",
-    "http://microsoft-support-alert.ga/helpdesk",
+    "http://google-account-signin-verify.xyz/update/password/confirm/secure",
+    "http://apple-id-locked.cf/signin/confirm/verify",
+    "http://microsoft-support-alert.ga/helpdesk/verify",
     "http://192.168.1.1/login/verify/account/password",
     "http://secure-paypal.com.login.tk/webscr",
     "http://www.paypal.com.secure.login.fakesite.com/cmd",
@@ -173,29 +229,29 @@ phishing_urls = [
     "http://facebook.com.security.alert.xyz/login",
     "http://linkedin.com.account.verify.tk/signin",
     "http://twitter.com.suspended.ml/verify/account",
-    "http://login-paypal.com.verify.xyz/webscr?cmd=login",
-    "http://secure.amazon.com.verify-account.tk/ap/signin",
-    "http://accounts.google.com.phishing.ml/ServiceLogin",
-    "http://appleid.apple.com.locked.xyz/signin",
-    "http://login.microsoftonline.com.phishing.tk/verify",
     "http://xn--pypal-4ve.com/verify",
     "http://paypa1.com/login",
     "http://arnazon.com/account",
     "http://micosoft.com/update",
     "http://gooogle.com/signin",
     "http://faceb00k.com/login",
-    "http://secure-paypal-login.com/confirm/account/suspended/verify/password",
-    "http://update-your-amazon-account.verify.credentials.xyz/signin",
-    "http://your-apple-id-has-been-locked.confirm.ml/unlock",
-    "http://account.google.com.verify.suspended.login.tk/security",
 ] + [
-    "http://random" + str(i) + "phish.tk/login/verify" for i in range(50)
+    f"http://random{i}phish.tk/login/verify/account/secure" for i in range(200)
 ] + [
-    "http://secure" + str(i) + "bank.ml/account/update/password" for i in range(50)
+    f"http://secure{i}bank.ml/account/update/password/confirm" for i in range(200)
 ] + [
-    "http://" + str(i) + "." + str(i) + "." + str(i) + ".1/login" for i in range(50)
+    f"http://{i}.{i}.{i}.{i}/login/verify" for i in range(1, 100)
+] + [
+    f"http://paypal-login-{i}.xyz/verify/account" for i in range(100)
+] + [
+    f"http://amazon-update-{i}.ml/confirm/password" for i in range(100)
+] + [
+    f"http://apple-id-verify-{i}.tk/signin/confirm" for i in range(100)
 ]
 
+phishing_urls.extend(builtin_phishing)
+
+# Safe URLs
 safe_urls = [
     "https://www.google.com",
     "https://www.youtube.com",
@@ -235,26 +291,70 @@ safe_urls = [
     "https://www.w3schools.com",
     "https://www.mozilla.org",
     "https://www.python.org",
-    "https://www.django.rest-framework.org",
     "https://www.npmjs.com",
-    "https://docs.google.com/document/d/1abc",
-    "https://mail.google.com/mail/u/0",
-    "https://drive.google.com/file/d/abc",
+    "https://www.docker.com",
+    "https://www.heroku.com",
+    "https://www.digitalocean.com",
+    "https://www.cloudflare.com",
+    "https://www.stripe.com",
+    "https://www.shopify.com",
+    "https://www.salesforce.com",
+    "https://www.hubspot.com",
+    "https://www.zendesk.com",
+    "https://www.atlassian.com",
+    "https://www.slack.com",
+    "https://docs.google.com",
+    "https://mail.google.com",
+    "https://drive.google.com",
     "https://accounts.google.com/signin",
     "https://myaccount.google.com",
-    "https://support.microsoft.com/en-us",
-    "https://office.microsoft.com/en-us",
+    "https://support.microsoft.com",
+    "https://office.microsoft.com",
     "https://login.microsoftonline.com",
     "https://portal.azure.com",
-    "https://docs.microsoft.com/en-us",
+    "https://docs.microsoft.com",
+    "https://www.adobe.com",
+    "https://www.oracle.com",
+    "https://www.ibm.com",
+    "https://www.cisco.com",
+    "https://www.intel.com",
+    "https://www.nvidia.com",
+    "https://www.samsung.com",
+    "https://www.sony.com",
+    "https://www.lg.com",
+    "https://www.hp.com",
+    "https://www.dell.com",
+    "https://www.lenovo.com",
+    "https://www.asus.com",
+    "https://www.acer.com",
+    "https://www.flipkart.com",
+    "https://www.myntra.com",
+    "https://www.swiggy.com",
+    "https://www.zomato.com",
+    "https://www.paytm.com",
+    "https://www.phonepe.com",
+    "https://www.gpay.com",
+    "https://www.irctc.co.in",
+    "https://www.makemytrip.com",
+    "https://www.booking.com",
+    "https://www.airbnb.com",
+    "https://www.tripadvisor.com",
 ] + [
-    "https://www.site" + str(i) + ".com/page/about" for i in range(100)
+    f"https://www.site{i}.com/page/about/contact" for i in range(300)
 ] + [
-    "https://blog" + str(i) + ".wordpress.com/2024/article" for i in range(50)
+    f"https://blog{i}.wordpress.com/2024/article/post" for i in range(200)
 ] + [
-    "https://shop" + str(i) + ".shopify.com/products" for i in range(50)
+    f"https://shop{i}.shopify.com/products/item" for i in range(200)
+] + [
+    f"https://news{i}.medium.com/article/story" for i in range(200)
 ]
 
+# Remove duplicates
+phishing_urls = list(set(phishing_urls))
+safe_urls = list(set(safe_urls))
+
+print(f"\nTotal phishing URLs: {len(phishing_urls)}")
+print(f"Total safe URLs: {len(safe_urls)}")
 # Try to download PhishTank data
 print("   Attempting to download PhishTank dataset...")
 try:

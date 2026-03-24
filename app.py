@@ -43,8 +43,44 @@ except Exception as e:
     print(f"⚠ ML Model not found, using heuristics only: {e}")
 
 
+# ─── GLOBAL WHITELIST ─────────────────────────────────────────
+TRUSTED_DOMAINS = [
+    'google.com', 'youtube.com', 'facebook.com', 'amazon.com',
+    'wikipedia.org', 'twitter.com', 'instagram.com', 'linkedin.com',
+    'github.com', 'stackoverflow.com', 'reddit.com', 'netflix.com',
+    'microsoft.com', 'apple.com', 'yahoo.com', 'bing.com',
+    'zoom.us', 'dropbox.com', 'spotify.com', 'twitch.tv',
+    'ebay.com', 'paypal.com', 'wordpress.com', 'medium.com',
+    'bbc.com', 'cnn.com', 'nytimes.com', 'techcrunch.com',
+    'mozilla.org', 'python.org', 'npmjs.com', 'docker.com',
+    'heroku.com', 'digitalocean.com', 'cloudflare.com',
+    'stripe.com', 'shopify.com', 'salesforce.com', 'slack.com',
+    'adobe.com', 'oracle.com', 'ibm.com', 'cisco.com',
+    'intel.com', 'nvidia.com', 'samsung.com', 'hp.com',
+    'dell.com', 'lenovo.com', 'asus.com', 'flipkart.com',
+    'paytm.com', 'phonepe.com', 'irctc.co.in', 'booking.com',
+    'airbnb.com', 'coursera.org', 'udemy.com', 'khanacademy.org',
+    'w3schools.com', 'gitlab.com', 'bitbucket.org', 'notion.so',
+    'figma.com', 'canva.com', 'trello.com', 'asana.com',
+    'whatsapp.com', 'telegram.org', 'discord.com', 'signal.org',
+    'onrender.com', 'netlify.app', 'vercel.app', 'pages.dev',
+    'githubusercontent.com', 'githubassets.com', 'githubapp.com'
+]
+
+def is_trusted_domain(url):
+    try:
+        extracted = tldextract.extract(url)
+        full_domain = f"{extracted.domain}.{extracted.suffix}".lower()
+        for trusted in TRUSTED_DOMAINS:
+            if full_domain == trusted or full_domain.endswith('.' + trusted):
+                return True
+    except:
+        pass
+    return False
+
+
 # ─── FEATURE EXTRACTION ───────────────────────────────────────
-def extract_features_ml(url):
+def extract_features(url):
     try:
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
@@ -54,200 +90,237 @@ def extract_features_ml(url):
         domain = extracted.domain or ''
         suffix = extracted.suffix or ''
         subdomain = extracted.subdomain or ''
-        url_lower = url.lower()
 
-        features = []
-        features.append(len(url))
-        features.append(len(domain))
-        features.append(len(parsed.path))
-        features.append(len(subdomain))
-        features.append(url.count('.'))
-        features.append(url.count('-'))
-        features.append(url.count('_'))
-        features.append(url.count('/'))
-        features.append(url.count('@'))
-        features.append(url.count('?'))
-        features.append(url.count('='))
-        features.append(url.count('&'))
-        features.append(url.count('%'))
-        features.append(url.count('#'))
-        features.append(sum(c.isdigit() for c in url))
-        features.append(len(re.findall(r'[^a-zA-Z0-9]', url)))
-        features.append(1 if parsed.scheme == 'https' else 0)
-        features.append(1 if parsed.scheme == 'http' else 0)
-        features.append(len(subdomain.split('.')) if subdomain else 0)
-        features.append(1 if re.match(r'\d+\.\d+\.\d+\.\d+', parsed.netloc) else 0)
-        features.append(sum(c.isdigit() for c in domain) / max(len(domain), 1))
-        features.append(sum(c.isdigit() for c in url) / max(len(url), 1))
+        features = {}
+        features['url_length'] = len(url)
+        features['domain_length'] = len(domain)
+        features['path_length'] = len(parsed.path)
+        features['subdomain_length'] = len(subdomain)
+        features['num_dots'] = url.count('.')
+        features['num_hyphens'] = url.count('-')
+        features['num_underscores'] = url.count('_')
+        features['num_slashes'] = url.count('/')
+        features['num_at'] = url.count('@')
+        features['num_question'] = url.count('?')
+        features['num_equal'] = url.count('=')
+        features['num_ampersand'] = url.count('&')
+        features['num_percent'] = url.count('%')
+        features['num_hash'] = url.count('#')
+        features['num_digits'] = sum(c.isdigit() for c in url)
+        features['has_https'] = 1 if parsed.scheme == 'https' else 0
+        features['has_http'] = 1 if parsed.scheme == 'http' else 0
+        features['num_subdomains'] = len(subdomain.split('.')) if subdomain else 0
+        features['has_ip'] = 1 if re.match(r'\d+\.\d+\.\d+\.\d+', parsed.netloc) else 0
 
-        phishing_words = ['login','signin','verify','update','secure','account',
-                         'banking','confirm','password','paypal','ebay','amazon',
-                         'apple','google','microsoft','support','helpdesk',
-                         'webscr','cmd','dispatch','notification','alert',
-                         'suspend','unusual','limited','restore','validate']
-        features.append(sum(1 for w in phishing_words if w in url_lower))
-
-        def entropy(s):
+        def shannon_entropy(s):
             if not s: return 0
             prob = [float(s.count(c)) / len(s) for c in dict.fromkeys(list(s))]
             return -sum(p * math.log(p) / math.log(2.0) for p in prob)
 
-        features.append(entropy(domain))
-        features.append(entropy(url))
-        features.append(entropy(parsed.path))
+        features['domain_entropy'] = shannon_entropy(domain)
+        features['url_entropy'] = shannon_entropy(url)
 
         suspicious_tlds = ['tk','ml','ga','cf','gq','xyz','top','pw','click',
-                          'link','work','party','gdn','stream','download',
-                          'bid','loan','review','win']
-        features.append(1 if suffix in suspicious_tlds else 0)
-        features.append(len(suffix))
+                           'link','work','party','gdn','stream','download',
+                           'bid','loan','review','win']
+        features['suspicious_tld'] = 1 if suffix in suspicious_tlds else 0
 
-        shorteners = ['bit.ly','tinyurl','goo.gl','t.co','ow.ly',
-                     'is.gd','buff.ly','adf.ly','tiny.cc','rb.gy']
-        features.append(1 if any(s in url_lower for s in shorteners) else 0)
+        shorteners = ['bit.ly','tinyurl','goo.gl','t.co','ow.ly','is.gd','buff.ly','adf.ly','tiny.cc']
+        url_lower = url.lower()
+        features['is_shortener'] = 1 if any(s in url_lower for s in shorteners) else 0
+        features['digit_ratio_domain'] = sum(c.isdigit() for c in domain) / max(len(domain), 1)
+        features['has_double_slash'] = 1 if '//' in url[7:] else 0
 
-        brands = ['paypal','amazon','google','microsoft','apple',
-                 'facebook','instagram','twitter','netflix','linkedin',
-                 'ebay','yahoo','wellsfargo','chase','bankofamerica']
-        features.append(1 if any(b in subdomain.lower() for b in brands) else 0)
-        features.append(1 if any(b in parsed.path.lower() for b in brands) else 0)
-        features.append(sum(1 for b in brands if b in url_lower))
-        features.append(1 if '//' in url[7:] else 0)
-        features.append(1 if '@' in parsed.netloc else 0)
-        features.append(len([x for x in parsed.path.split('/') if x]))
-        features.append(1 if parsed.port else 0)
-        features.append(1 if 'https' in domain.lower() else 0)
-        features.append(sum(c.isalpha() for c in url) / max(len(url), 1))
-        features.append(sum(c.isdigit() for c in url) / max(len(url), 1))
+        brands = ['paypal','amazon','google','microsoft','apple','facebook','instagram','twitter','netflix','linkedin']
+        features['brand_in_subdomain'] = 1 if any(b in subdomain.lower() for b in brands) else 0
+        features['brand_in_path'] = 1 if any(b in parsed.path.lower() for b in brands) else 0
 
-        return np.array(features).reshape(1, -1)
-    except:
-        return None
+        return list(features.values()), list(features.keys())
+
+    except Exception as e:
+        print(f"Feature extraction error: {e}")
+        return [0] * 24, ['f' + str(i) for i in range(24)]
 
 
-# ─── HEURISTIC SCORING (backup) ───────────────────────────────
-def extract_features(url):
-    features = {}
-    features['url_length'] = len(url)
-    features['domain_length'] = len(urllib.parse.urlparse(url).netloc)
-    features['path_length'] = len(urllib.parse.urlparse(url).path)
-    features['num_dots'] = url.count('.')
-    features['num_hyphens'] = url.count('-')
-    features['num_underscores'] = url.count('_')
-    features['num_slashes'] = url.count('/')
-    features['num_at'] = url.count('@')
-    features['num_question'] = url.count('?')
-    features['num_equal'] = url.count('=')
-    features['num_ampersand'] = url.count('&')
-    features['num_percent'] = url.count('%')
-    features['num_hash'] = url.count('#')
-    features['num_digits'] = sum(c.isdigit() for c in url)
-    parsed = urllib.parse.urlparse(url)
-    features['has_https'] = 1 if parsed.scheme == 'https' else 0
-    features['has_http'] = 1 if parsed.scheme == 'http' else 0
-    extracted = tldextract.extract(url)
-    domain = extracted.domain
-    suffix = extracted.suffix
-    subdomain = extracted.subdomain
-    features['subdomain_length'] = len(subdomain)
-    features['num_subdomains'] = len(subdomain.split('.')) if subdomain else 0
-    features['has_ip'] = 1 if re.match(r'\d+\.\d+\.\d+\.\d+', parsed.netloc) else 0
-    suspicious_words = ['login','signin','verify','update','secure','account',
-                       'banking','confirm','password','paypal','ebay','amazon',
-                       'apple','google','microsoft','support','helpdesk',
-                       'webscr','cmd','dispatch','notification','alert']
-    url_lower = url.lower()
-    features['suspicious_word_count'] = sum(1 for w in suspicious_words if w in url_lower)
-    def shannon_entropy(s):
-        if not s: return 0
-        prob = [float(s.count(c)) / len(s) for c in dict.fromkeys(list(s))]
-        return -sum(p * math.log(p) / math.log(2.0) for p in prob)
-    features['domain_entropy'] = shannon_entropy(domain)
-    features['url_entropy'] = shannon_entropy(url)
-    suspicious_tlds = ['tk','ml','ga','cf','gq','xyz','top','pw','click',
-                      'link','work','party','gdn','stream','download']
-    features['suspicious_tld'] = 1 if suffix in suspicious_tlds else 0
-    shorteners = ['bit.ly','tinyurl','goo.gl','t.co','ow.ly','is.gd',
-                 'buff.ly','adf.ly','tiny.cc']
-    features['is_shortener'] = 1 if any(s in url_lower for s in shorteners) else 0
-    features['digit_ratio_domain'] = sum(c.isdigit() for c in domain) / max(len(domain), 1)
-    features['has_double_slash'] = 1 if '//' in url[7:] else 0
-    brands = ['paypal','amazon','google','microsoft','apple','facebook',
-             'instagram','twitter','netflix','linkedin']
-    features['brand_in_subdomain'] = 1 if any(b in subdomain.lower() for b in brands) else 0
-    features['brand_in_path'] = 1 if any(b in parsed.path.lower() for b in brands) else 0
-    return list(features.values()), list(features.keys())
-
-
+# ─── HEURISTIC SCORING ────────────────────────────────────────
 def heuristic_score(url):
+    # Whitelist check — already handled in combined_score but kept as safety net
+    if is_trusted_domain(url):
+        return 0, []
+
     values, keys = extract_features(url)
     feat = dict(zip(keys, values))
     score = 0
     flags = []
-    if feat['has_ip']: score += 40; flags.append("IP address used instead of domain name")
-    if feat['has_double_slash']: score += 20; flags.append("Suspicious double-slash in URL path")
-    if feat['suspicious_tld']: score += 25; flags.append("Suspicious top-level domain")
-    if feat['is_shortener']: score += 15; flags.append("URL shortener detected")
-    if feat['num_at'] > 0: score += 30; flags.append("@ symbol found in URL")
-    if feat['brand_in_subdomain']: score += 35; flags.append("Brand name used in subdomain (impersonation)")
-    if feat['brand_in_path']: score += 10; flags.append("Brand name used in path")
-    if feat['suspicious_word_count'] >= 3: score += 20; flags.append(f"{feat['suspicious_word_count']} suspicious keywords found")
-    elif feat['suspicious_word_count'] >= 1: score += 8
-    if feat['domain_entropy'] > 3.8: score += 15; flags.append("Domain name appears randomly generated")
-    if feat['url_length'] > 100: score += 10; flags.append("Unusually long URL")
-    if feat['num_subdomains'] > 2: score += 15; flags.append("Excessive subdomains")
-    if feat['digit_ratio_domain'] > 0.4: score += 12; flags.append("Domain contains too many digits")
-    if not feat['has_https']: score += 10; flags.append("No HTTPS encryption")
-    if feat['num_hyphens'] > 3: score += 8; flags.append("Multiple hyphens in URL")
+
+    url_lower = url.lower()
+    parsed = urllib.parse.urlparse(url)
+    extracted2 = tldextract.extract(url)
+    domain = extracted2.domain
+    subdomain2 = extracted2.subdomain
+    suffix = extracted2.suffix
+
+    if feat['has_ip']:
+        score += 45
+        flags.append("IP address used instead of domain name")
+
+    if feat['num_at'] > 0:
+        score += 40
+        flags.append("@ symbol found in URL")
+
+    if feat['has_double_slash']:
+        score += 25
+        flags.append("Suspicious double-slash in URL path")
+
+    brands = ['paypal','amazon','google','microsoft','apple','facebook',
+              'instagram','twitter','netflix','linkedin','ebay','yahoo',
+              'wellsfargo','chase','bankofamerica','citibank','hsbc',
+              'barclays','hdfc','icici','sbi']
+
+    for brand in brands:
+        if brand in subdomain2.lower():
+            score += 40
+            flags.append(f"Brand name '{brand}' used in subdomain (impersonation)")
+            break
+        if (brand in domain.lower() and domain.lower() != brand and len(domain) > len(brand) + 2):
+            score += 30
+            flags.append(f"Brand name '{brand}' in domain (possible impersonation)")
+            break
+
+    bad_tlds = ['tk','ml','ga','cf','gq','xyz','top','pw','click','link','work',
+                'party','gdn','stream','download','bid','loan','review','win',
+                'racing','cricket','science','accountant','date','faith']
+    if suffix in bad_tlds:
+        score += 30
+        flags.append("Suspicious top-level domain")
+
+    shorteners = ['bit.ly','tinyurl','goo.gl','t.co','ow.ly','is.gd',
+                  'buff.ly','adf.ly','tiny.cc','rb.gy','cutt.ly','short.io','bl.ink']
+    if any(s in url_lower for s in shorteners):
+        score += 20
+        flags.append("URL shortener detected")
+
+    phish_words = ['login','signin','verify','update','secure','account','banking',
+                   'confirm','password','helpdesk','webscr','cmd','dispatch',
+                   'notification','alert','suspend','unusual','limited','restore',
+                   'validate','authenticate','credential','authorize']
+    kw_count = sum(1 for w in phish_words if w in url_lower)
+    if kw_count >= 5:
+        score += 35
+        flags.append(f"{kw_count} suspicious keywords found")
+    elif kw_count >= 3:
+        score += 25
+        flags.append(f"{kw_count} suspicious keywords found")
+    elif kw_count >= 1:
+        score += 8
+
+    if not url.startswith('https://'):
+        score += 15
+        flags.append("No HTTPS encryption")
+
+    if feat['domain_entropy'] > 4.2:
+        score += 20
+        flags.append("Domain name appears randomly generated")
+    elif feat['domain_entropy'] > 4.0:
+        score += 10
+
+    if len(url) > 200:
+        score += 15
+        flags.append("Unusually long URL")
+    elif len(url) > 150:
+        score += 8
+
+    if feat['num_subdomains'] > 4:
+        score += 20
+        flags.append("Excessive subdomains")
+    elif feat['num_subdomains'] > 3:
+        score += 10
+
+    if feat['digit_ratio_domain'] > 0.6:
+        score += 15
+        flags.append("Domain contains too many digits")
+
+    if feat['num_hyphens'] > 5:
+        score += 12
+        flags.append("Multiple hyphens in URL")
+
+    # ── Typosquatting — now includes paypai ───────────────────
+    typos = {
+        'paypa1':'paypal','paypall':'paypal','paypai':'paypal',
+        'arnazon':'amazon','amazom':'amazon','amaz0n':'amazon',
+        'gooogle':'google','goggle':'google','g00gle':'google',
+        'faceb00k':'facebook','facebok':'facebook',
+        'micosoft':'microsoft','microsofft':'microsoft',
+        'netfl1x':'netflix','netflx':'netflix',
+        'lnkedin':'linkedin','linkedln':'linkedin'
+    }
+    for typo, real in typos.items():
+        if typo in domain.lower():
+            score += 45
+            flags.append(f"Typosquatting detected — mimics '{real}'")
+            break
+
+    suspicious_paths = ['/wp-login','/admin/login','/secure/login',
+                        '/account/login','/signin/confirm','/verify/account',
+                        '/update/password','/confirm/account','/suspend/verify']
+    path = parsed.path.lower()
+    for sp in suspicious_paths:
+        if sp in path:
+            score += 20
+            flags.append("Suspicious path pattern detected")
+            break
+
     return min(score, 100), flags
 
 
-# ─── COMBINED SCORING (ML + Heuristics) ───────────────────────
+# ─── COMBINED SCORE — CORRECT ORDER ───────────────────────────
 def combined_score(url):
+    # ── STEP 1: WHITELIST — runs before EVERYTHING ────────────
+    if is_trusted_domain(url):
+        return 0, [], "whitelist", None
+
+    # ── STEP 2: Heuristics ────────────────────────────────────
     heuristic, flags = heuristic_score(url)
 
-    # Check threat intelligence database
+    # ── STEP 3: Threat feed (skipped for trusted domains) ─────
     is_known_threat, threat_source, threat_type = check_threat_db(url)
     if is_known_threat:
-        source_names = {
-            'openphish': 'OpenPhish',
-            'urlhaus': 'URLhaus',
-            'phishtank': 'PhishTank'
-        }
-        type_names = {
-            'phishing': 'phishing site',
-            'malware': 'malware distribution'
-        }
+        source_names = {'openphish':'OpenPhish','urlhaus':'URLhaus','phishtank':'PhishTank'}
+        type_names = {'phishing':'phishing site','malware':'malware distribution'}
         src = source_names.get(threat_source, threat_source)
         typ = type_names.get(threat_type, threat_type)
         flags.insert(0, f"🚨 Known {typ} — listed in {src} threat database")
         heuristic = min(heuristic + 60, 100)
+
+    # ── STEP 4: ML Model (skipped for trusted domains) ────────
     ml_score = None
     ml_confidence = None
     detection_method = "heuristic"
 
     if ml_model is not None:
-        features = extract_features_ml(url)
+        features, _ = extract_features(url)
         if features is not None:
             try:
-                features_scaled = ml_scaler.transform(features)
+                features_array = np.array(features).reshape(1, -1)
+                features_scaled = ml_scaler.transform(features_array)
                 ml_pred = ml_model.predict(features_scaled)[0]
                 ml_proba = ml_model.predict_proba(features_scaled)[0]
-                ml_confidence = float(ml_proba[1])  # probability of phishing
+                ml_confidence = float(ml_proba[1])
                 ml_score = int(ml_confidence * 100)
                 detection_method = "ml+heuristic"
 
-                # Weighted combination: 60% ML + 40% heuristic
-                final_score = int(0.6 * ml_score + 0.4 * heuristic)
-
-                # If ML is very confident, trust it more
-                if ml_confidence > 0.85:
-                    final_score = int(0.8 * ml_score + 0.2 * heuristic)
+                if ml_confidence > 0.8:
+                    final_score = int(0.7 * ml_score + 0.3 * heuristic)
                     flags.append(f"🤖 ML Model: {ml_confidence*100:.0f}% phishing confidence")
-                elif ml_confidence > 0.6:
-                    flags.append(f"🤖 ML Model: {ml_confidence*100:.0f}% phishing probability")
+                elif ml_confidence < 0.2 and heuristic < 20:
+                    final_score = int(0.6 * ml_score + 0.4 * heuristic)
+                else:
+                    final_score = max(int(0.6 * ml_score + 0.4 * heuristic), heuristic)
+                    if ml_confidence > 0.5:
+                        flags.append(f"🤖 ML Model: {ml_confidence*100:.0f}% phishing probability")
 
                 return min(final_score, 100), flags, detection_method, ml_confidence
+
             except Exception as e:
                 print(f"ML prediction error: {e}")
 
@@ -296,7 +369,8 @@ def check_url():
         score, flags, method, ml_conf = combined_score(url)
         age_days = get_domain_age(url)
 
-        if age_days is not None:
+        # Skip domain age penalty for trusted domains
+        if age_days is not None and not is_trusted_domain(url):
             if age_days < 30:
                 score = min(score + 25, 100)
                 flags.append(f"Domain is only {age_days} days old — very new!")
@@ -304,7 +378,7 @@ def check_url():
                 score = min(score + 10, 100)
                 flags.append(f"Domain is only {age_days} days old")
 
-        if score >= 60:
+        if score >= 55:
             verdict = "DANGEROUS"
         elif score >= 30:
             verdict = "SUSPICIOUS"
@@ -319,20 +393,17 @@ def check_url():
                   flags, method, ml_conf)
 
         return jsonify({
-            'url': url,
-            'domain': domain,
-            'score': score,
-            'verdict': verdict,
-            'flags': flags,
-            'domain_age_days': age_days,
-            'scan_mode': 'full',
-            'detection_method': method,
-            'ml_confidence': ml_conf,
+            'url': url, 'domain': domain, 'score': score,
+            'verdict': verdict, 'flags': flags,
+            'domain_age_days': age_days, 'scan_mode': 'full',
+            'detection_method': method, 'ml_confidence': ml_conf,
             'https': url.startswith('https://')
         })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/quick', methods=['POST'])
 def quick_scan():
     data = request.get_json()
@@ -344,22 +415,21 @@ def quick_scan():
     extracted = tldextract.extract(url)
     domain = f"{extracted.domain}.{extracted.suffix}"
 
-    flags.append("Quick scan — domain age not checked (use Full Scan for complete analysis)")
+    if not is_trusted_domain(url):
+        flags.append("Quick scan — domain age not checked (use Full Scan for complete analysis)")
 
-    if score >= 60: verdict = "DANGEROUS"
+    if score >= 55: verdict = "DANGEROUS"
     elif score >= 30: verdict = "SUSPICIOUS"
     else: verdict = "SAFE"
+
     save_scan(url, domain, score, verdict, 'quick',
-              url.startswith('https://'), None,
-              flags, method, ml_conf)
+              url.startswith('https://'), None, flags, method, ml_conf)
 
     return jsonify({
         'url': url, 'domain': domain, 'score': score,
         'verdict': verdict, 'flags': flags,
-        'domain_age_days': None,
-        'scan_mode': 'quick',
-        'detection_method': method,
-        'ml_confidence': ml_conf,
+        'domain_age_days': None, 'scan_mode': 'quick',
+        'detection_method': method, 'ml_confidence': ml_conf,
         'https': url.startswith('https://')
     })
 
@@ -452,5 +522,7 @@ Be friendly, clear and educational. Keep responses concise."""
     except Exception as e:
         print(f"Chat error: {e}")
         return jsonify({'reply': 'I am having trouble connecting right now. Please try again in a moment! 🙏'})
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
